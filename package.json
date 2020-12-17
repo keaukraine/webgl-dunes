@@ -1,0 +1,37 @@
+{
+  "name": "webgl-dunes",
+  "version": "0.1.0",
+  "license": "MIT",
+  "description": "WebGL dunes scene",
+  "author": "Oleksandr Popov (github.com/keaukraine/)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/keaukraine/webgl-dunes.git"
+  },
+  "keywords": [],
+  "homepage": "https://github.com/keaukraine/webgl-dunes#readme",
+  "dependencies": {
+    "webgl-framework": "^2.1.2"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^11.0.2",
+    "@rollup/plugin-json": "^4.0.2",
+    "@rollup/plugin-node-resolve": "^7.1.1",
+    "rollup-plugin-livereload": "^1.0.4",
+    "rollup-plugin-serve": "^1.0.1",
+    "@types/node": "^10.11.0",
+    "rimraf": "^3.0.2",
+    "rollup": "^1.31.1",
+    "rollup-plugin-typescript2": "^0.26.0",
+    "ts-node": "^8.6.2",
+    "tslib": "1.11.0",
+    "typescript": "^3.8.2",
+    "http-server": "^0.12.1"
+  },
+  "scripts": {
+    "prebuild": "rimraf dist",
+    "build": "tsc --module commonjs && rollup -c rollup.config.ts",
+    "server": "http-server -c-1",
+    "start": "rollup -c rollup.serve.config.ts -w"
+  }
+}

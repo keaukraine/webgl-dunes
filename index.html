@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="3D Dunes WebGL Demo">
+    <meta name="author" content="Oleksandr Popov">
+    <link rel="icon" href="favicon.ico">
+    <link rel="icon" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <title>3D Dunes WebGL demo</title>
+    <link rel="stylesheet" href="styles/css/site.css">
+    <script src="dist/js/es/index.js"></script>
+    <meta name="theme-color" content="#111111">
+    <meta name="msapplication-navbutton-color" content="#111111">
+    <meta name="apple-mobile-web-app-status-bar-style" content="#111111">
+
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="manifest.json">
+</head>
+
+<body>
+    <svg xmlns="http://www.w3.org/2000/svg" style="width: 0; height: 0; position: absolute;">
+        <filter id="dropshadow" height="130%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="2" /> <!-- stdDeviation is how much to blur -->
+            <feOffset dx="0" dy="0" result="offsetblur" /> <!-- how much to offset -->
+            <feComponentTransfer>
+                <feFuncA type="linear" slope="1.6" /> <!-- slope is the opacity of the shadow -->
+            </feComponentTransfer>
+            <feMerge>
+                <feMergeNode /> <!-- this contains the offset blurred image -->
+                <feMergeNode in="SourceGraphic" /> <!-- this contains the element that the filter is applied to -->
+            </feMerge>
+        </filter>
+    </svg>
+
+    <canvas id="canvasGL" class="canvasGL transparent">
+        Your browser doesn't appear to support the
+        <code>&lt;canvas&gt;</code> element.
+    </canvas>
+    <h3 id="message" class="progress">Loading...</h3>
+    <a href="javascript:void(0)" id="toggleFullscreen" class="control-icon control-fs transparent">
+        <i class="icon-enter-fs" title="Fullscreen Mode">
+            <svg xmlns="http://www.w3.org/2000/svg" height="32" viewBox="0 0 24 24" width="32">
+                <path d="M0 0h24v24H0z" fill="none" />
+                <path style="filter:url(#dropshadow)" id="shape"
+                    d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z" />
+            </svg>
+        </i>
+        <i class="icon-exit-fs" title="Exit Fullscreen">
+            <svg xmlns="http://www.w3.org/2000/svg" height="32" viewBox="0 0 24 24" width="32">
+                <path d="M0 0h24v24H0z" fill="none" />
+                <path style="filter:url(#dropshadow)" id="shape"
+                    d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z" />
+            </svg>
+        </i>
+    </a>
+    <div id="promo" class="promo transparent">
+        <h3 class="text">3D Dunes Live Wallpaper</h3>
+        <a
+            href='https://play.google.com/store/apps/details?id=org.androidworks.livewallpaperdunes&pcampaignid=MKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img
+                alt='Get it on Google Play'
+                src='https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png' /></a>
+    </div>
+</body>
+
+</html>

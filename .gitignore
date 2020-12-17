@@ -1,0 +1,15 @@
+/.sass-cache
+/node_modules
+/temp
+node_modules
+coverage
+.nyc_output
+.DS_Store
+*.log
+.vscode
+.idea
+.awcache
+.rpt2_cache
+docs
+.vs
+package-lock.json
