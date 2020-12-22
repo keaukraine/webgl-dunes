@@ -1,5 +1,3 @@
-
-(function(l, r) { if (l.getElementById('livereloadscript')) return; r = l.createElement('script'); r.async = 1; r.src = '//' + (window.location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1'; r.id = 'livereloadscript'; l.getElementsByTagName('head')[0].appendChild(r) })(window.document);
 class FullScreenUtils {
     /** Enters fullscreen. */
     enterFullScreen() {
@@ -1695,7 +1693,6 @@ class DiffuseShader extends BaseShader {
         renderer.checkGlError("DiffuseShader glDrawElements");
     }
 }
-//# sourceMappingURL=webgl-framework.es6.js.map
 
 /**
  * Common utilities
@@ -2607,7 +2604,6 @@ class DunesShader extends DiffuseShader {
     }
 }
 DunesShader.lightmapIndex = 0;
-//# sourceMappingURL=DunesShader.js.map
 
 const particlesCoordinates = [
     [
@@ -2760,7 +2756,6 @@ const particlesCoordinates = [
         [12.507367, 21.285116, -6.593583]
     ]
 ];
-//# sourceMappingURL=DuneCapsParticles.js.map
 
 class SoftDiffuseColoredShader extends DiffuseShader {
     fillCode() {
@@ -2812,7 +2807,6 @@ class SoftDiffuseColoredShader extends DiffuseShader {
         this.color = this.getUniform("color");
     }
 }
-//# sourceMappingURL=SoftDiffuseColoredShader.js.map
 
 class DiffuseColoredShader extends DiffuseShader {
     constructor() {
@@ -2848,7 +2842,6 @@ class DiffuseColoredShader extends DiffuseShader {
         super.drawModel(renderer, model, tx, ty, tz, rx, ry, rz, sx, sy, sz);
     }
 }
-//# sourceMappingURL=DiffuseColoredShader.js.map
 
 class DiffuseColoredShaderAlpha extends DiffuseShader {
     constructor() {
@@ -2888,7 +2881,6 @@ class DiffuseColoredShaderAlpha extends DiffuseShader {
         super.drawModel(renderer, model, tx, ty, tz, rx, ry, rz, sx, sy, sz);
     }
 }
-//# sourceMappingURL=DiffuseColoredShaderAlpha.js.map
 
 class DiffuseAnimatedShader extends BaseShader {
     fillCode() {
@@ -2942,7 +2934,6 @@ class DiffuseAnimatedShader extends BaseShader {
         renderer.checkGlError("glDrawElements");
     }
 }
-//# sourceMappingURL=DiffuseAnimatedShader.js.map
 
 class DiffuseATColoredAnimatedShader extends DiffuseAnimatedShader {
     fillCode() {
@@ -2965,14 +2956,12 @@ class DiffuseATColoredAnimatedShader extends DiffuseAnimatedShader {
         this.color = this.getUniform("color");
     }
 }
-//# sourceMappingURL=DiffuseATColoredAnimatedShader.js.map
 
 var CameraMode;
 (function (CameraMode) {
     CameraMode[CameraMode["Rotating"] = 0] = "Rotating";
     CameraMode[CameraMode["Random"] = 1] = "Random";
 })(CameraMode || (CameraMode = {}));
-//# sourceMappingURL=CameraMode.js.map
 
 /**
  * Renders geometries with dummy green color.
@@ -2995,7 +2984,6 @@ class DepthRenderShader extends BaseShader {
         this.view_proj_matrix = this.getUniform("view_proj_matrix");
     }
 }
-//# sourceMappingURL=DepthRenderShader.js.map
 
 const FOV_LANDSCAPE = 70.0; // FOV for landscape
 const FOV_PORTRAIT = 80.0; // FOV for portrait
@@ -3798,7 +3786,6 @@ class FpsCamera {
         }
     }
 }
-//# sourceMappingURL=FpsCamera.js.map
 
 var MovementMode;
 (function (MovementMode) {

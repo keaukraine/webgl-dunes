@@ -82,13 +82,9 @@ class DunesShader extends webgl_framework_1.DiffuseShader {
             "  gl_FragColor += waves * uWavesColor;\n" +
             "  gl_FragColor.rgb += mix(detail2, detail1, vSlopeCoeff2);\n" +
             "  gl_FragColor *= mix(uShadowColor, vec4(1.0, 1.0, 1.0, 1.0), textureData[" + DunesShader.lightmapIndex + "]);" +
-            //"  gl_FragColor *= vec4(1.0, 0.0, 0.0, 1.0) * textureData[1];"+
             "  gl_FragColor = mix(gl_FragColor, uFogColor, vFogAmount);\n" +
-            // "  gl_FragColor.g = vDetailFade;\n" + // detail visualization
-            //"  gl_FragColor *= 0.001;\n" +
-            //"  gl_FragColor += texture2D(sDust, vWindSpotsTexCoord);\n" +
-            //"  gl_FragColor += 0.001 * uShadowColor;\n" +
-            // "  gl_FragColor[" + DunesShader.lightmapIndex + "] = 1.0;\n" +
+            // "  gl_FragColor.r = vDetailFade;\n" + // detail distance visualization
+            // "  gl_FragColor.r = texture2D(sDust, vWindSpotsTexCoord).r;\n" + // wind terrain spots visualization
             "}";
     }
     fillUniformsAttributes() {
