@@ -65,6 +65,7 @@ export declare class DunesRenderer extends BaseRenderer {
     private readonly RANDOM_POSITIONS;
     private currentRandomCamera;
     private currentRandomLookat;
+    private currentRandomFov;
     private tempVec3;
     constructor();
     setCustomCamera(camera: mat4 | undefined): void;

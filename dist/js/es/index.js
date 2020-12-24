@@ -3229,6 +3229,7 @@ class DunesRenderer extends BaseRenderer {
         ];
         this.currentRandomCamera = 0;
         this.currentRandomLookat = new Float32Array(3);
+        this.currentRandomFov = 0;
         this.tempVec3 = new Float32Array(3);
         this.randomizeCamera();
     }
@@ -3335,12 +3336,17 @@ class DunesRenderer extends BaseRenderer {
         else {
             ratio = 1.0;
         }
+        let fov = 0;
         if (this.gl.canvas.width >= this.gl.canvas.height) {
-            this.setFOV(this.mProjMatrix, FOV_LANDSCAPE * multiplier, ratio, this.Z_NEAR, this.Z_FAR);
+            fov = FOV_LANDSCAPE * multiplier;
         }
         else {
-            this.setFOV(this.mProjMatrix, FOV_PORTRAIT * multiplier, ratio, this.Z_NEAR, this.Z_FAR);
+            fov = FOV_PORTRAIT * multiplier;
         }
+        if (this.cameraMode === CameraMode.Random && this.customCamera === undefined) {
+            fov -= this.timerRandomCamera * this.currentRandomFov;
+        }
+        this.setFOV(this.mProjMatrix, fov, ratio, this.Z_NEAR, this.Z_FAR);
     }
     /**
      * Calculates camera matrix.
@@ -3652,6 +3658,7 @@ class DunesRenderer extends BaseRenderer {
         this.currentRandomLookat[0] = this.RANDOM_POSITIONS[this.currentRandomCamera][0] + this.minRandom(0.3);
         this.currentRandomLookat[1] = this.RANDOM_POSITIONS[this.currentRandomCamera][1] + this.minRandom(0.3);
         this.currentRandomLookat[2] = this.RANDOM_POSITIONS[this.currentRandomCamera][2] + this.minRandom(0.3) * 0.1;
+        this.currentRandomFov = Math.random() * 30;
     }
     minRandom(threshold) {
         let random = (Math.random() - 0.5);
