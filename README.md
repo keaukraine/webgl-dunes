@@ -2,6 +2,8 @@
 
 Live demo page is available here: https://keaukraine.github.io/webgl-dunes/index.html
 
+Full article explaining scene composition and shaders code: https://blog.devgenius.io/rendering-dunes-terrain-in-webgl-ac3dd2c67e8c
+
 Works in latest Chrome, Firefox, Safari and Edge.
 
 # Used Libraries
