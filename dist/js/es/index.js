@@ -1,3 +1,5 @@
+
+(function(l, r) { if (l.getElementById('livereloadscript')) return; r = l.createElement('script'); r.async = 1; r.src = '//' + (window.location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1'; r.id = 'livereloadscript'; l.getElementsByTagName('head')[0].appendChild(r) })(window.document);
 class FullScreenUtils {
     /** Enters fullscreen. */
     enterFullScreen() {
@@ -41,7 +43,7 @@ class UncompressedTextureLoader {
         return new Promise((resolve, reject) => {
             const texture = gl.createTexture();
             if (texture === null) {
-                reject('Error creating WebGL texture');
+                reject("Error creating WebGL texture");
                 return;
             }
             const image = new Image();
@@ -65,8 +67,42 @@ class UncompressedTextureLoader {
                 }
                 resolve(texture);
             };
-            image.onerror = () => reject('Cannot load image');
+            image.onerror = () => reject("Cannot load image");
         });
+    }
+    static async loadCubemap(url, gl) {
+        const texture = gl.createTexture();
+        if (texture === null) {
+            throw new Error("Error creating WebGL texture");
+        }
+        gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
+        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        const promises = [
+            { type: gl.TEXTURE_CUBE_MAP_POSITIVE_X, suffix: "-posx.png" },
+            { type: gl.TEXTURE_CUBE_MAP_NEGATIVE_X, suffix: "-negx.png" },
+            { type: gl.TEXTURE_CUBE_MAP_POSITIVE_Y, suffix: "-posy.png" },
+            { type: gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, suffix: "-negy.png" },
+            { type: gl.TEXTURE_CUBE_MAP_POSITIVE_Z, suffix: "-posz.png" },
+            { type: gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, suffix: "-negz.png" }
+        ].map(face => new Promise((resolve, reject) => {
+            const image = new Image();
+            image.src = url + face.suffix;
+            image.onload = () => {
+                gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
+                gl.texImage2D(face.type, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+                if (image && image.src) {
+                    console.log(`Loaded texture ${url}${face.suffix} [${image.width}x${image.height}]`);
+                }
+                resolve();
+            };
+            image.onerror = () => reject("Cannot load image");
+        }));
+        await Promise.all(promises);
+        gl.bindTexture(gl.TEXTURE_2D, null);
+        return texture;
     }
 }
 
@@ -1693,6 +1729,7 @@ class DiffuseShader extends BaseShader {
         renderer.checkGlError("DiffuseShader glDrawElements");
     }
 }
+//# sourceMappingURL=webgl-framework.es6.js.map
 
 /**
  * Common utilities
@@ -2604,6 +2641,7 @@ class DunesShader extends DiffuseShader {
     }
 }
 DunesShader.lightmapIndex = 0;
+//# sourceMappingURL=DunesShader.js.map
 
 const particlesCoordinates = [
     [
@@ -2756,6 +2794,7 @@ const particlesCoordinates = [
         [12.507367, 21.285116, -6.593583]
     ]
 ];
+//# sourceMappingURL=DuneCapsParticles.js.map
 
 class SoftDiffuseColoredShader extends DiffuseShader {
     fillCode() {
@@ -2807,6 +2846,7 @@ class SoftDiffuseColoredShader extends DiffuseShader {
         this.color = this.getUniform("color");
     }
 }
+//# sourceMappingURL=SoftDiffuseColoredShader.js.map
 
 class DiffuseColoredShader extends DiffuseShader {
     constructor() {
@@ -2842,6 +2882,7 @@ class DiffuseColoredShader extends DiffuseShader {
         super.drawModel(renderer, model, tx, ty, tz, rx, ry, rz, sx, sy, sz);
     }
 }
+//# sourceMappingURL=DiffuseColoredShader.js.map
 
 class DiffuseColoredShaderAlpha extends DiffuseShader {
     constructor() {
@@ -2881,6 +2922,7 @@ class DiffuseColoredShaderAlpha extends DiffuseShader {
         super.drawModel(renderer, model, tx, ty, tz, rx, ry, rz, sx, sy, sz);
     }
 }
+//# sourceMappingURL=DiffuseColoredShaderAlpha.js.map
 
 class DiffuseAnimatedShader extends BaseShader {
     fillCode() {
@@ -2934,6 +2976,7 @@ class DiffuseAnimatedShader extends BaseShader {
         renderer.checkGlError("glDrawElements");
     }
 }
+//# sourceMappingURL=DiffuseAnimatedShader.js.map
 
 class DiffuseATColoredAnimatedShader extends DiffuseAnimatedShader {
     fillCode() {
@@ -2956,12 +2999,14 @@ class DiffuseATColoredAnimatedShader extends DiffuseAnimatedShader {
         this.color = this.getUniform("color");
     }
 }
+//# sourceMappingURL=DiffuseATColoredAnimatedShader.js.map
 
 var CameraMode;
 (function (CameraMode) {
     CameraMode[CameraMode["Rotating"] = 0] = "Rotating";
     CameraMode[CameraMode["Random"] = 1] = "Random";
 })(CameraMode || (CameraMode = {}));
+//# sourceMappingURL=CameraMode.js.map
 
 /**
  * Renders geometries with dummy green color.
@@ -2984,6 +3029,110 @@ class DepthRenderShader extends BaseShader {
         this.view_proj_matrix = this.getUniform("view_proj_matrix");
     }
 }
+//# sourceMappingURL=DepthRenderShader.js.map
+
+class DunesShadowShader extends DunesShader {
+    static getInstance(gl, lightmapIndex) {
+        DunesShadowShader.lightmapIndexShadow = lightmapIndex;
+        return new DunesShadowShader(gl);
+    }
+    fillCode() {
+        this.vertexShaderCode = "uniform mat4 view_proj_matrix;\n" +
+            "attribute vec4 rm_Vertex;\n" +
+            "attribute vec2 rm_TexCoord0;\n" +
+            "attribute vec3 rm_Normal;\n" +
+            "varying vec2 vTextureCoord;\n" +
+            "varying vec2 vUpwindTexCoord;\n" +
+            "varying vec2 vLeewardTexCoord2;\n" +
+            "varying vec2 vWindSpotsTexCoord;\n" +
+            "varying vec3 vNormal;\n" +
+            "varying float vSlopeCoeff;\n" + // Windward slope coefficient
+            "varying float vSlopeCoeff2;\n" + // Leeward slope coefficient
+            "varying vec2 vDetailCoord1;\n" +
+            "varying float vFogAmount;\n" +
+            "varying float vDetailFade;\n" +
+            "\n" +
+            "uniform float fogDistance;\n" +
+            "uniform float fogStartDistance;\n" +
+            "uniform float detailDistance;\n" +
+            "uniform float detailStartDistance;\n" +
+            "uniform float uTime;\n" +
+            "\n" +
+            "varying vec2 vTextureCoordShadow;\n" +
+            "uniform vec2 shadowDimensions;\n" + // x - half-size; y - size
+            "uniform mat4 model_matrix;\n" +
+            "\n" +
+            "void main() {\n" +
+            "  gl_Position = view_proj_matrix * rm_Vertex;\n" +
+            "  vTextureCoord = rm_TexCoord0;\n" +
+            "  vNormal = rm_Normal;\n" +
+            "  vSlopeCoeff = clamp( 4.0*dot(vNormal, normalize(vec3(1.0, 0.0, 0.13))), 0.0, 1.0);\n" +
+            "  vSlopeCoeff2 = clamp( 14.0*dot(vNormal, normalize(vec3(-1.0, 0.0, -0.2))), 0.0, 1.0);\n" +
+            "  vUpwindTexCoord = vTextureCoord * vec2(100.0, 10.0);\n" +
+            "  vUpwindTexCoord.y += uTime;\n" +
+            "  vDetailCoord1 = rm_TexCoord0 * vec2(100.0, 100.0);\n" +
+            "  vLeewardTexCoord2 = vTextureCoord * vec2(20.0, 30.0);\n" +
+            "  vLeewardTexCoord2.y += uTime;\n" +
+            "  vWindSpotsTexCoord = vTextureCoord * vec2(1.5, 1.5);\n" +
+            "  vWindSpotsTexCoord.x += uTime * 0.1;\n" +
+            "  vFogAmount = clamp((length(gl_Position) - fogStartDistance) / fogDistance, 0.0, 1.0);\n" +
+            "  vDetailFade = 1.0 - clamp((length(gl_Position) - detailStartDistance) / detailDistance, 0.0, 1.0);\n" +
+            "  vec4 pos = model_matrix * rm_Vertex;\n" +
+            // "  vTextureCoordShadow = (pos.xy + shadowDimensions.x) / shadowDimensions.y;\n" +
+            "  vTextureCoordShadow = pos.xy;\n" +
+            "  vTextureCoordShadow *= shadowDimensions.y;\n" +
+            "  vTextureCoordShadow.x += uTime / 20.;\n" +
+            "}";
+        this.fragmentShaderCode = "precision mediump float;\n" +
+            "varying vec2 vTextureCoord;\n" +
+            "varying vec3 vNormal;\n" +
+            "varying float vSlopeCoeff;\n" +
+            "varying float vSlopeCoeff2;\n" +
+            "varying vec2 vUpwindTexCoord;\n" +
+            "varying vec2 vLeewardTexCoord2;\n" +
+            "varying vec2 vWindSpotsTexCoord;\n" +
+            "varying vec2 vDetailCoord1;\n" +
+            "varying float vFogAmount;\n" +
+            "varying float vDetailFade;\n" +
+            "uniform sampler2D sTexture;\n" +
+            "uniform sampler2D sDust;\n" +
+            "uniform sampler2D sDetail1;\n" +
+            "uniform sampler2D sShadow;\n" +
+            "uniform float uDustOpacity;\n" +
+            "uniform vec4 uColor;\n" +
+            "uniform vec4 uFogColor;\n" +
+            "uniform vec4 uShadowColor;\n" +
+            "uniform vec4 uWavesColor;\n" +
+            "varying vec2 vTextureCoordShadow;\n" +
+            "void main() {\n" +
+            "  vec4 windward = texture2D(sDust, vUpwindTexCoord);\n" +
+            "  vec4 leeward2 = texture2D(sDust, vLeewardTexCoord2);\n" +
+            "  vec4 detailColor = texture2D(sDetail1, vDetailCoord1);" +
+            "  float detail1 = detailColor.g - 0.5;\n" +
+            "  float detail2 = detailColor.r - 0.5;\n" +
+            "  detail1 *= vDetailFade;\n" +
+            "  detail2 *= vDetailFade;\n" +
+            "  vec4 shadow = texture2D(sShadow, vTextureCoordShadow);\n" +
+            "  vec4 textureData = texture2D(sTexture, vTextureCoord);\n" +
+            "  gl_FragColor = textureData.r * uColor;\n" +
+            "  vec4 waves = windward * uDustOpacity * vSlopeCoeff;\n" +
+            "  waves += leeward2 * uDustOpacity * vSlopeCoeff2;\n" +
+            "  waves *= 1.0 - clamp(texture2D(sDust, vWindSpotsTexCoord).r * 5.0, 0.0, 1.0);\n" +
+            "  gl_FragColor += waves * uWavesColor;\n" +
+            "  gl_FragColor *= shadow;\n" +
+            "  gl_FragColor.rgb += mix(detail2, detail1, vSlopeCoeff2);\n" +
+            "  gl_FragColor *= mix(uShadowColor, vec4(1.0, 1.0, 1.0, 1.0), textureData[" + DunesShadowShader.lightmapIndexShadow + "]);" +
+            "  gl_FragColor = mix(gl_FragColor, uFogColor, vFogAmount);\n" +
+            "}";
+    }
+    fillUniformsAttributes() {
+        super.fillUniformsAttributes();
+        this.sShadow = this.getUniform("sShadow");
+        this.shadowDimensions = this.getUniform("shadowDimensions");
+        this.model_matrix = this.getUniform("model_matrix");
+    }
+}
+DunesShadowShader.lightmapIndexShadow = 0;
 
 const FOV_LANDSCAPE = 70.0; // FOV for landscape
 const FOV_PORTRAIT = 80.0; // FOV for portrait
@@ -3004,6 +3153,7 @@ class DunesRenderer extends BaseRenderer {
         this.fmSun = new FullModel();
         this.fmBird = new FullModel();
         this.shaderDunesPermutations = [];
+        this.shaderDunesShadowPermutations = [];
         this.Z_NEAR = 20.0;
         this.Z_FAR = 40000.0;
         this.SMOKE_SOFTNESS = 0.012;
@@ -3235,6 +3385,8 @@ class DunesRenderer extends BaseRenderer {
     }
     get shaderDunes() { return this.shaderDunesPermutations[this.PRESET.DUNES_SHADER]; }
     ;
+    get shaderDunesShadow() { return this.shaderDunesShadowPermutations[this.PRESET.DUNES_SHADER]; }
+    ;
     setCustomCamera(camera) {
         this.customCamera = camera;
     }
@@ -3259,6 +3411,8 @@ class DunesRenderer extends BaseRenderer {
         this.shaderDepthRender = new DepthRenderShader(this.gl);
         this.shaderDunesPermutations.push(DunesShader.getInstance(this.gl, 1));
         this.shaderDunesPermutations.push(DunesShader.getInstance(this.gl, 2));
+        this.shaderDunesShadowPermutations.push(DunesShadowShader.getInstance(this.gl, 1));
+        this.shaderDunesShadowPermutations.push(DunesShadowShader.getInstance(this.gl, 2));
     }
     async loadData() {
         var _a, _b;
@@ -3277,7 +3431,8 @@ class DunesRenderer extends BaseRenderer {
             await UncompressedTextureLoader.load("data/textures/detail.png", this.gl),
             await UncompressedTextureLoader.load("data/textures/smoke.png", this.gl),
             await UncompressedTextureLoader.load("data/textures/sun_flare.png", this.gl),
-            await UncompressedTextureLoader.load("data/textures/bird2.png", this.gl)
+            await UncompressedTextureLoader.load("data/textures/bird2.png", this.gl),
+            await UncompressedTextureLoader.load("data/textures/clouds.png", this.gl)
         ]);
         this.skyTexture = textures[0];
         this.dunesDiffuseTexture = textures[1];
@@ -3286,6 +3441,7 @@ class DunesRenderer extends BaseRenderer {
         this.textureDustCloud = textures[4];
         this.textureSunFlare = textures[5];
         this.textureBird = textures[6];
+        this.textureClouds = textures[7];
         this.palmTextureAlpha = await UncompressedTextureLoader.load("data/textures/palm-alpha.png", this.gl, undefined, undefined, true);
         this.palmTextureDiffuse = await UncompressedTextureLoader.load("data/textures/palm-diffuse.png", this.gl, undefined, undefined, true);
         this.initOffscreen();
@@ -3430,34 +3586,39 @@ class DunesRenderer extends BaseRenderer {
             return;
         }
         this.gl.disable(this.gl.BLEND);
-        this.shaderDunes.use();
-        this.setTexture2D(0, this.dunesDiffuseTexture, this.shaderDunes.sTexture);
-        this.setTexture2D(1, this.dunesDustTexture, this.shaderDunes.sDust);
-        this.setTexture2D(2, this.dunesDetailTexture, this.shaderDunes.sDetail1);
-        this.gl.uniform1f(this.shaderDunes.uDustOpacity, 0.075);
-        this.gl.uniform1f(this.shaderDunes.uTime, this.dustTimer);
-        this.gl.uniform4f(this.shaderDunes.uColor, this.PRESET.SAND_COLOR.r, this.PRESET.SAND_COLOR.g, this.PRESET.SAND_COLOR.b, 1.0);
-        this.gl.uniform4f(this.shaderDunes.uFogColor, this.PRESET.FOG_COLOR.r, this.PRESET.FOG_COLOR.g, this.PRESET.FOG_COLOR.b, 1.0);
-        this.gl.uniform4f(this.shaderDunes.uShadowColor, this.PRESET.SHADOW_COLOR.r, this.PRESET.SHADOW_COLOR.g, this.PRESET.SHADOW_COLOR.b, 1.0);
-        this.gl.uniform4f(this.shaderDunes.uWavesColor, this.PRESET.WAVES_COLOR.r, this.PRESET.WAVES_COLOR.g, this.PRESET.WAVES_COLOR.b, 1.0);
-        this.gl.uniform1f(this.shaderDunes.fogStartDistance, this.PRESET.FOG_START_DISTANCE);
-        this.gl.uniform1f(this.shaderDunes.fogDistance, this.PRESET.FOG_DISTANCE);
-        this.gl.uniform1f(this.shaderDunes.detailStartDistance, 400);
-        this.gl.uniform1f(this.shaderDunes.detailDistance, 1200);
-        this.drawDunes(this.fmDunes, 0, 0, 0, 0, 0, 0, TERRAIN_SCALE, TERRAIN_SCALE, TERRAIN_SCALE);
+        const shader = this.shaderDunesShadow;
+        shader.use();
+        this.setTexture2D(0, this.dunesDiffuseTexture, shader.sTexture);
+        this.setTexture2D(1, this.dunesDustTexture, shader.sDust);
+        this.setTexture2D(2, this.dunesDetailTexture, shader.sDetail1);
+        if (shader instanceof DunesShadowShader) {
+            this.gl.uniform2f(shader.shadowDimensions, 2000, 0.0001);
+            this.setTexture2D(3, this.textureClouds, shader.sShadow);
+        }
+        this.gl.uniform1f(shader.uDustOpacity, 0.075);
+        this.gl.uniform1f(shader.uTime, this.dustTimer);
+        this.gl.uniform4f(shader.uColor, this.PRESET.SAND_COLOR.r, this.PRESET.SAND_COLOR.g, this.PRESET.SAND_COLOR.b, 1.0);
+        this.gl.uniform4f(shader.uFogColor, this.PRESET.FOG_COLOR.r, this.PRESET.FOG_COLOR.g, this.PRESET.FOG_COLOR.b, 1.0);
+        this.gl.uniform4f(shader.uShadowColor, this.PRESET.SHADOW_COLOR.r, this.PRESET.SHADOW_COLOR.g, this.PRESET.SHADOW_COLOR.b, 1.0);
+        this.gl.uniform4f(shader.uWavesColor, this.PRESET.WAVES_COLOR.r, this.PRESET.WAVES_COLOR.g, this.PRESET.WAVES_COLOR.b, 1.0);
+        this.gl.uniform1f(shader.fogStartDistance, this.PRESET.FOG_START_DISTANCE);
+        this.gl.uniform1f(shader.fogDistance, this.PRESET.FOG_DISTANCE);
+        this.gl.uniform1f(shader.detailStartDistance, 400);
+        this.gl.uniform1f(shader.detailDistance, 1200);
+        this.drawDunes(shader, this.fmDunes, 0, 0, 0, 0, 0, 0, TERRAIN_SCALE, TERRAIN_SCALE, TERRAIN_SCALE);
         // -45.15 * 2 = 90.3
         const SKIRT_SCALE = 1.5;
         const SKIRT_OFFSET = 9030 / 2 + (9030 / 2 * SKIRT_SCALE);
         this.gl.cullFace(this.gl.FRONT);
-        this.drawDunes(this.fmDunes, SKIRT_OFFSET, 0, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE, TERRAIN_SCALE);
-        this.drawDunes(this.fmDunes, -SKIRT_OFFSET, 0, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE, TERRAIN_SCALE);
-        this.drawDunes(this.fmDunes, 0, SKIRT_OFFSET, 0, 0, 0, 0, TERRAIN_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
-        this.drawDunes(this.fmDunes, 0, -SKIRT_OFFSET, 0, 0, 0, 0, TERRAIN_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
+        this.drawDunes(shader, this.fmDunes, SKIRT_OFFSET, 0, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE, TERRAIN_SCALE);
+        this.drawDunes(shader, this.fmDunes, -SKIRT_OFFSET, 0, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE, TERRAIN_SCALE);
+        this.drawDunes(shader, this.fmDunes, 0, SKIRT_OFFSET, 0, 0, 0, 0, TERRAIN_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
+        this.drawDunes(shader, this.fmDunes, 0, -SKIRT_OFFSET, 0, 0, 0, 0, TERRAIN_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
         this.gl.cullFace(this.gl.BACK);
-        this.drawDunes(this.fmDunes, SKIRT_OFFSET, SKIRT_OFFSET, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
-        this.drawDunes(this.fmDunes, -SKIRT_OFFSET, -SKIRT_OFFSET, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
-        this.drawDunes(this.fmDunes, SKIRT_OFFSET, -SKIRT_OFFSET, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
-        this.drawDunes(this.fmDunes, -SKIRT_OFFSET, SKIRT_OFFSET, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
+        this.drawDunes(shader, this.fmDunes, SKIRT_OFFSET, SKIRT_OFFSET, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
+        this.drawDunes(shader, this.fmDunes, -SKIRT_OFFSET, -SKIRT_OFFSET, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
+        this.drawDunes(shader, this.fmDunes, SKIRT_OFFSET, -SKIRT_OFFSET, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
+        this.drawDunes(shader, this.fmDunes, -SKIRT_OFFSET, SKIRT_OFFSET, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
         this.drawBirds();
         this.drawPalmTrees();
         this.shaderDiffuse.use();
@@ -3496,20 +3657,23 @@ class DunesRenderer extends BaseRenderer {
         const y = Math.cos(angle) * this.BIRD_FLIGHT_RADIUS + centerY;
         return { x, y };
     }
-    drawDunes(model, tx, ty, tz, rx, ry, rz, sx, sy, sz) {
-        if (this.shaderDunes === undefined || this.shaderDunes.rm_Vertex === undefined || this.shaderDunes.rm_TexCoord0 === undefined || this.shaderDunes.view_proj_matrix === undefined || this.shaderDunes.rm_Normal === undefined) {
+    drawDunes(shader, model, tx, ty, tz, rx, ry, rz, sx, sy, sz) {
+        if (shader === undefined || shader.rm_Vertex === undefined || shader.rm_TexCoord0 === undefined || shader.view_proj_matrix === undefined || shader.rm_Normal === undefined) {
             return;
         }
         const gl = this.gl;
         model.bindBuffers(gl);
-        gl.enableVertexAttribArray(this.shaderDunes.rm_Vertex);
-        gl.enableVertexAttribArray(this.shaderDunes.rm_TexCoord0);
-        gl.enableVertexAttribArray(this.shaderDunes.rm_Normal);
-        gl.vertexAttribPointer(this.shaderDunes.rm_Vertex, 3, gl.FLOAT, false, 32, 0);
-        gl.vertexAttribPointer(this.shaderDunes.rm_TexCoord0, 2, gl.FLOAT, false, 32, 12);
-        gl.vertexAttribPointer(this.shaderDunes.rm_Normal, 3, gl.FLOAT, false, 32, 20);
+        gl.enableVertexAttribArray(shader.rm_Vertex);
+        gl.enableVertexAttribArray(shader.rm_TexCoord0);
+        gl.enableVertexAttribArray(shader.rm_Normal);
+        gl.vertexAttribPointer(shader.rm_Vertex, 3, gl.FLOAT, false, 32, 0);
+        gl.vertexAttribPointer(shader.rm_TexCoord0, 2, gl.FLOAT, false, 32, 12);
+        gl.vertexAttribPointer(shader.rm_Normal, 3, gl.FLOAT, false, 32, 20);
         this.calculateMVPMatrix(tx, ty, tz, rx, ry, rz, sx, sy, sz);
-        gl.uniformMatrix4fv(this.shaderDunes.view_proj_matrix, false, this.getMVPMatrix());
+        gl.uniformMatrix4fv(shader.view_proj_matrix, false, this.getMVPMatrix());
+        if (shader instanceof DunesShadowShader) {
+            gl.uniformMatrix4fv(shader.model_matrix, false, this.getModelMatrix());
+        }
         gl.drawElements(gl.TRIANGLES, model.getNumIndices() * 3, gl.UNSIGNED_SHORT, 0);
         this.checkGlError("DiffuseShader glDrawElements");
     }
@@ -3793,6 +3957,7 @@ class FpsCamera {
         }
     }
 }
+//# sourceMappingURL=FpsCamera.js.map
 
 var MovementMode;
 (function (MovementMode) {
@@ -3844,6 +4009,7 @@ class FreeMovement {
     }
     ;
 }
+//# sourceMappingURL=FreeMovement.js.map
 
 function ready(fn) {
     if (document.readyState !== "loading") {
@@ -3882,4 +4048,5 @@ ready(() => {
     });
     canvas.addEventListener("click", () => renderer.changeTimeOfDay());
 });
+//# sourceMappingURL=index.js.map
 //# sourceMappingURL=index.js.map

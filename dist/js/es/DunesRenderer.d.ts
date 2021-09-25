@@ -1,5 +1,6 @@
 import { BaseRenderer, FullModel, DiffuseShader } from "webgl-framework";
 import { mat4 } from "gl-matrix";
+import { DunesShader } from "./shaders/DunesShader";
 export declare class DunesRenderer extends BaseRenderer {
     private lastTime;
     private angleYaw;
@@ -18,11 +19,14 @@ export declare class DunesRenderer extends BaseRenderer {
     private dunesDustTexture;
     private dunesDetailTexture;
     private textureDustCloud;
+    private textureClouds;
     private textureSunFlare;
     private textureBird;
     private shaderDiffuse;
     private shaderDunesPermutations;
+    private shaderDunesShadowPermutations;
     private get shaderDunes();
+    private get shaderDunesShadow();
     private shaderSoftDiffuseColored;
     private sunShader;
     private palmShader;
@@ -94,7 +98,7 @@ export declare class DunesRenderer extends BaseRenderer {
     drawPalmTrees(): void;
     drawBirds(): void;
     private getBirdPosition;
-    drawDunes(model: FullModel, tx: number, ty: number, tz: number, rx: number, ry: number, rz: number, sx: number, sy: number, sz: number): void;
+    drawDunes(shader: DunesShader, model: FullModel, tx: number, ty: number, tz: number, rx: number, ry: number, rz: number, sx: number, sy: number, sz: number): void;
     drawDunesDepth(model: FullModel, tx: number, ty: number, tz: number, rx: number, ry: number, rz: number, sx: number, sy: number, sz: number): void;
     private drawDiffuseVBOFacingCamera;
     private calculateMVPMatrixForSprite;

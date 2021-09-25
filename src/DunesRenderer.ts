@@ -8,6 +8,7 @@ import { DiffuseColoredShaderAlpha } from "./shaders/DiffuseColoredShaderAlpha";
 import { DiffuseATColoredAnimatedShader } from "./shaders/DiffuseATColoredAnimatedShader";
 import { CameraMode } from "./CameraMode";
 import { DepthRenderShader } from "./shaders/DepthRenderShader";
+import { DunesShadowShader } from "./shaders/DunesShadowShader";
 
 const FOV_LANDSCAPE = 70.0; // FOV for landscape
 const FOV_PORTRAIT = 80.0; // FOV for portrait
@@ -36,12 +37,15 @@ export class DunesRenderer extends BaseRenderer {
     private dunesDustTexture: WebGLTexture | undefined;
     private dunesDetailTexture: WebGLTexture | undefined;
     private textureDustCloud: WebGLTexture | undefined;
+    private textureClouds: WebGLTexture | undefined;
     private textureSunFlare: WebGLTexture | undefined;
     private textureBird: WebGLTexture | undefined;
 
     private shaderDiffuse: DiffuseShader | undefined;
     private shaderDunesPermutations: DunesShader[] = [];
+    private shaderDunesShadowPermutations: DunesShadowShader[] = [];
     private get shaderDunes(): DunesShader { return this.shaderDunesPermutations![this.PRESET.DUNES_SHADER]; };
+    private get shaderDunesShadow(): DunesShadowShader { return this.shaderDunesShadowPermutations![this.PRESET.DUNES_SHADER]; };
     private shaderSoftDiffuseColored: SoftDiffuseColoredShader | undefined;
     private sunShader: DiffuseColoredShader | undefined;
     private palmShader: DiffuseColoredShaderAlpha | undefined;
@@ -327,6 +331,8 @@ export class DunesRenderer extends BaseRenderer {
         this.shaderDepthRender = new DepthRenderShader(this.gl);
         this.shaderDunesPermutations.push(DunesShader.getInstance(this.gl, 1));
         this.shaderDunesPermutations.push(DunesShader.getInstance(this.gl, 2));
+        this.shaderDunesShadowPermutations.push(DunesShadowShader.getInstance(this.gl, 1));
+        this.shaderDunesShadowPermutations.push(DunesShadowShader.getInstance(this.gl, 2));
     }
 
     async loadData(): Promise<void> {
@@ -345,7 +351,8 @@ export class DunesRenderer extends BaseRenderer {
             await UncompressedTextureLoader.load("data/textures/detail.png", this.gl),
             await UncompressedTextureLoader.load("data/textures/smoke.png", this.gl),
             await UncompressedTextureLoader.load("data/textures/sun_flare.png", this.gl),
-            await UncompressedTextureLoader.load("data/textures/bird2.png", this.gl)
+            await UncompressedTextureLoader.load("data/textures/bird2.png", this.gl),
+            await UncompressedTextureLoader.load("data/textures/clouds.png", this.gl)
         ]);
 
         this.skyTexture = textures[0];
@@ -355,6 +362,7 @@ export class DunesRenderer extends BaseRenderer {
         this.textureDustCloud = textures[4];
         this.textureSunFlare = textures[5];
         this.textureBird = textures[6];
+        this.textureClouds = textures[7];
 
         this.palmTextureAlpha = await UncompressedTextureLoader.load("data/textures/palm-alpha.png", this.gl, undefined, undefined, true);
         this.palmTextureDiffuse = await UncompressedTextureLoader.load("data/textures/palm-diffuse.png", this.gl, undefined, undefined, true);
@@ -548,42 +556,48 @@ export class DunesRenderer extends BaseRenderer {
 
         this.gl.disable(this.gl.BLEND);
 
-        this.shaderDunes.use();
-        this.setTexture2D(0, this.dunesDiffuseTexture!, this.shaderDunes.sTexture!);
-        this.setTexture2D(1, this.dunesDustTexture!, this.shaderDunes.sDust!);
-        this.setTexture2D(2, this.dunesDetailTexture!, this.shaderDunes.sDetail1!);
+        const shader = this.shaderDunesShadow;
 
-        this.gl.uniform1f(this.shaderDunes.uDustOpacity!, 0.075);
-        this.gl.uniform1f(this.shaderDunes.uTime!, this.dustTimer);
-        this.gl.uniform4f(this.shaderDunes.uColor!, this.PRESET.SAND_COLOR.r, this.PRESET.SAND_COLOR.g, this.PRESET.SAND_COLOR.b, 1.0);
-        this.gl.uniform4f(this.shaderDunes.uFogColor!, this.PRESET.FOG_COLOR.r, this.PRESET.FOG_COLOR.g, this.PRESET.FOG_COLOR.b, 1.0);
-        this.gl.uniform4f(this.shaderDunes.uShadowColor!, this.PRESET.SHADOW_COLOR.r, this.PRESET.SHADOW_COLOR.g, this.PRESET.SHADOW_COLOR.b, 1.0);
-        this.gl.uniform4f(this.shaderDunes.uWavesColor!, this.PRESET.WAVES_COLOR.r, this.PRESET.WAVES_COLOR.g, this.PRESET.WAVES_COLOR.b, 1.0);
+        shader.use();
+        this.setTexture2D(0, this.dunesDiffuseTexture!, shader.sTexture!);
+        this.setTexture2D(1, this.dunesDustTexture!, shader.sDust!);
+        this.setTexture2D(2, this.dunesDetailTexture!, shader.sDetail1!);
+        if (shader instanceof DunesShadowShader) {
+            this.gl.uniform2f(shader.shadowDimensions!, 2000, 0.0001);
+            this.setTexture2D(3, this.textureClouds!, shader.sShadow!);
+        }
 
-        this.gl.uniform1f(this.shaderDunes.fogStartDistance!, this.PRESET.FOG_START_DISTANCE);
-        this.gl.uniform1f(this.shaderDunes.fogDistance!, this.PRESET.FOG_DISTANCE);
+        this.gl.uniform1f(shader.uDustOpacity!, 0.075);
+        this.gl.uniform1f(shader.uTime!, this.dustTimer);
+        this.gl.uniform4f(shader.uColor!, this.PRESET.SAND_COLOR.r, this.PRESET.SAND_COLOR.g, this.PRESET.SAND_COLOR.b, 1.0);
+        this.gl.uniform4f(shader.uFogColor!, this.PRESET.FOG_COLOR.r, this.PRESET.FOG_COLOR.g, this.PRESET.FOG_COLOR.b, 1.0);
+        this.gl.uniform4f(shader.uShadowColor!, this.PRESET.SHADOW_COLOR.r, this.PRESET.SHADOW_COLOR.g, this.PRESET.SHADOW_COLOR.b, 1.0);
+        this.gl.uniform4f(shader.uWavesColor!, this.PRESET.WAVES_COLOR.r, this.PRESET.WAVES_COLOR.g, this.PRESET.WAVES_COLOR.b, 1.0);
 
-        this.gl.uniform1f(this.shaderDunes.detailStartDistance!, 400);
-        this.gl.uniform1f(this.shaderDunes.detailDistance!, 1200);
+        this.gl.uniform1f(shader.fogStartDistance!, this.PRESET.FOG_START_DISTANCE);
+        this.gl.uniform1f(shader.fogDistance!, this.PRESET.FOG_DISTANCE);
 
-        this.drawDunes(this.fmDunes, 0, 0, 0, 0, 0, 0, TERRAIN_SCALE, TERRAIN_SCALE, TERRAIN_SCALE);
+        this.gl.uniform1f(shader.detailStartDistance!, 400);
+        this.gl.uniform1f(shader.detailDistance!, 1200);
+
+        this.drawDunes(shader, this.fmDunes, 0, 0, 0, 0, 0, 0, TERRAIN_SCALE, TERRAIN_SCALE, TERRAIN_SCALE);
 
         // -45.15 * 2 = 90.3
         const SKIRT_SCALE = 1.5;
         const SKIRT_OFFSET = 9030 / 2 + (9030 / 2 * SKIRT_SCALE);
 
         this.gl.cullFace(this.gl.FRONT);
-        this.drawDunes(this.fmDunes, SKIRT_OFFSET, 0, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE, TERRAIN_SCALE);
-        this.drawDunes(this.fmDunes, -SKIRT_OFFSET, 0, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE, TERRAIN_SCALE);
-        this.drawDunes(this.fmDunes, 0, SKIRT_OFFSET, 0, 0, 0, 0, TERRAIN_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
-        this.drawDunes(this.fmDunes, 0, -SKIRT_OFFSET, 0, 0, 0, 0, TERRAIN_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
+        this.drawDunes(shader, this.fmDunes, SKIRT_OFFSET, 0, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE, TERRAIN_SCALE);
+        this.drawDunes(shader, this.fmDunes, -SKIRT_OFFSET, 0, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE, TERRAIN_SCALE);
+        this.drawDunes(shader, this.fmDunes, 0, SKIRT_OFFSET, 0, 0, 0, 0, TERRAIN_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
+        this.drawDunes(shader, this.fmDunes, 0, -SKIRT_OFFSET, 0, 0, 0, 0, TERRAIN_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
 
         this.gl.cullFace(this.gl.BACK);
 
-        this.drawDunes(this.fmDunes, SKIRT_OFFSET, SKIRT_OFFSET, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
-        this.drawDunes(this.fmDunes, -SKIRT_OFFSET, -SKIRT_OFFSET, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
-        this.drawDunes(this.fmDunes, SKIRT_OFFSET, -SKIRT_OFFSET, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
-        this.drawDunes(this.fmDunes, -SKIRT_OFFSET, SKIRT_OFFSET, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
+        this.drawDunes(shader, this.fmDunes, SKIRT_OFFSET, SKIRT_OFFSET, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
+        this.drawDunes(shader, this.fmDunes, -SKIRT_OFFSET, -SKIRT_OFFSET, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
+        this.drawDunes(shader, this.fmDunes, SKIRT_OFFSET, -SKIRT_OFFSET, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
+        this.drawDunes(shader, this.fmDunes, -SKIRT_OFFSET, SKIRT_OFFSET, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
 
         this.drawBirds();
         this.drawPalmTrees();
@@ -651,12 +665,13 @@ export class DunesRenderer extends BaseRenderer {
     }
 
     drawDunes(
+        shader: DunesShader,
         model: FullModel,
         tx: number, ty: number, tz: number,
         rx: number, ry: number, rz: number,
         sx: number, sy: number, sz: number
     ): void {
-        if (this.shaderDunes === undefined || this.shaderDunes.rm_Vertex === undefined || this.shaderDunes.rm_TexCoord0 === undefined || this.shaderDunes.view_proj_matrix === undefined || this.shaderDunes.rm_Normal === undefined) {
+        if (shader === undefined || shader.rm_Vertex === undefined || shader.rm_TexCoord0 === undefined || shader.view_proj_matrix === undefined || shader.rm_Normal === undefined) {
             return;
         }
 
@@ -664,16 +679,20 @@ export class DunesRenderer extends BaseRenderer {
 
         model.bindBuffers(gl);
 
-        gl.enableVertexAttribArray(this.shaderDunes.rm_Vertex);
-        gl.enableVertexAttribArray(this.shaderDunes.rm_TexCoord0);
-        gl.enableVertexAttribArray(this.shaderDunes.rm_Normal);
-        gl.vertexAttribPointer(this.shaderDunes.rm_Vertex, 3, gl.FLOAT, false, 32, 0);
-        gl.vertexAttribPointer(this.shaderDunes.rm_TexCoord0, 2, gl.FLOAT, false, 32, 12);
-        gl.vertexAttribPointer(this.shaderDunes.rm_Normal, 3, gl.FLOAT, false, 32, 20);
+        gl.enableVertexAttribArray(shader.rm_Vertex);
+        gl.enableVertexAttribArray(shader.rm_TexCoord0);
+        gl.enableVertexAttribArray(shader.rm_Normal);
+        gl.vertexAttribPointer(shader.rm_Vertex, 3, gl.FLOAT, false, 32, 0);
+        gl.vertexAttribPointer(shader.rm_TexCoord0, 2, gl.FLOAT, false, 32, 12);
+        gl.vertexAttribPointer(shader.rm_Normal, 3, gl.FLOAT, false, 32, 20);
 
         this.calculateMVPMatrix(tx, ty, tz, rx, ry, rz, sx, sy, sz);
 
-        gl.uniformMatrix4fv(this.shaderDunes.view_proj_matrix, false, this.getMVPMatrix());
+        gl.uniformMatrix4fv(shader.view_proj_matrix, false, this.getMVPMatrix());
+
+        if (shader instanceof DunesShadowShader) {
+            gl.uniformMatrix4fv(shader.model_matrix!, false, this.getModelMatrix());
+        }
 
         gl.drawElements(gl.TRIANGLES, model.getNumIndices() * 3, gl.UNSIGNED_SHORT, 0);
         this.checkGlError("DiffuseShader glDrawElements");
