@@ -288,7 +288,7 @@ class DunesRenderer extends webgl_framework_1.BaseRenderer {
     }
     async loadData() {
         var _a, _b;
-        await Promise.all([
+        const modelsPromise = Promise.all([
             this.fmSky.load("data/models/sky", this.gl),
             this.fmPalms.load("data/models/palms", this.gl),
             this.fmDunes.load("data/models/dunes", this.gl),
@@ -296,15 +296,18 @@ class DunesRenderer extends webgl_framework_1.BaseRenderer {
             this.fmSun.load("data/models/sun_flare", this.gl),
             this.fmBird.load("data/models/bird-anim-uv", this.gl),
         ]);
-        const textures = await Promise.all([
-            await webgl_framework_1.UncompressedTextureLoader.load("data/textures/" + this.PRESET.SKY + ".jpg", this.gl, undefined, undefined, true),
-            await webgl_framework_1.UncompressedTextureLoader.load("data/textures/dunes-diffuse.jpg", this.gl),
-            await webgl_framework_1.UncompressedTextureLoader.load("data/textures/upwind.png", this.gl),
-            await webgl_framework_1.UncompressedTextureLoader.load("data/textures/detail.png", this.gl),
-            await webgl_framework_1.UncompressedTextureLoader.load("data/textures/smoke.png", this.gl),
-            await webgl_framework_1.UncompressedTextureLoader.load("data/textures/sun_flare.png", this.gl),
-            await webgl_framework_1.UncompressedTextureLoader.load("data/textures/bird2.png", this.gl)
+        const texturesPromise = Promise.all([
+            webgl_framework_1.UncompressedTextureLoader.load("data/textures/" + this.PRESET.SKY + ".jpg", this.gl, undefined, undefined, true),
+            webgl_framework_1.UncompressedTextureLoader.load("data/textures/dunes-diffuse.jpg", this.gl),
+            webgl_framework_1.UncompressedTextureLoader.load("data/textures/upwind.png", this.gl),
+            webgl_framework_1.UncompressedTextureLoader.load("data/textures/detail.png", this.gl),
+            webgl_framework_1.UncompressedTextureLoader.load("data/textures/smoke.png", this.gl),
+            webgl_framework_1.UncompressedTextureLoader.load("data/textures/sun_flare.png", this.gl),
+            webgl_framework_1.UncompressedTextureLoader.load("data/textures/bird2.png", this.gl),
+            webgl_framework_1.UncompressedTextureLoader.load("data/textures/palm-alpha.png", this.gl, undefined, undefined, true),
+            webgl_framework_1.UncompressedTextureLoader.load("data/textures/palm-diffuse.png", this.gl, undefined, undefined, true)
         ]);
+        const [models, textures] = await Promise.all([modelsPromise, texturesPromise]);
         this.skyTexture = textures[0];
         this.dunesDiffuseTexture = textures[1];
         this.dunesDustTexture = textures[2];
@@ -312,8 +315,16 @@ class DunesRenderer extends webgl_framework_1.BaseRenderer {
         this.textureDustCloud = textures[4];
         this.textureSunFlare = textures[5];
         this.textureBird = textures[6];
-        this.palmTextureAlpha = await webgl_framework_1.UncompressedTextureLoader.load("data/textures/palm-alpha.png", this.gl, undefined, undefined, true);
-        this.palmTextureDiffuse = await webgl_framework_1.UncompressedTextureLoader.load("data/textures/palm-diffuse.png", this.gl, undefined, undefined, true);
+        this.palmTextureAlpha = textures[7];
+        this.palmTextureDiffuse = textures[8];
+        this.gl.bindTexture(this.gl.TEXTURE_2D, this.dunesDiffuseTexture);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR_MIPMAP_LINEAR);
+        this.gl.generateMipmap(this.gl.TEXTURE_2D);
+        this.gl.bindTexture(this.gl.TEXTURE_2D, this.dunesDetailTexture);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR_MIPMAP_LINEAR);
+        this.gl.generateMipmap(this.gl.TEXTURE_2D);
         this.initOffscreen();
         this.initVignette();
         this.loaded = true;

@@ -41,7 +41,7 @@ class UncompressedTextureLoader {
         return new Promise((resolve, reject) => {
             const texture = gl.createTexture();
             if (texture === null) {
-                reject('Error creating WebGL texture');
+                reject("Error creating WebGL texture");
                 return;
             }
             const image = new Image();
@@ -65,8 +65,42 @@ class UncompressedTextureLoader {
                 }
                 resolve(texture);
             };
-            image.onerror = () => reject('Cannot load image');
+            image.onerror = () => reject("Cannot load image");
         });
+    }
+    static async loadCubemap(url, gl) {
+        const texture = gl.createTexture();
+        if (texture === null) {
+            throw new Error("Error creating WebGL texture");
+        }
+        gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
+        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        const promises = [
+            { type: gl.TEXTURE_CUBE_MAP_POSITIVE_X, suffix: "-posx.png" },
+            { type: gl.TEXTURE_CUBE_MAP_NEGATIVE_X, suffix: "-negx.png" },
+            { type: gl.TEXTURE_CUBE_MAP_POSITIVE_Y, suffix: "-posy.png" },
+            { type: gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, suffix: "-negy.png" },
+            { type: gl.TEXTURE_CUBE_MAP_POSITIVE_Z, suffix: "-posz.png" },
+            { type: gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, suffix: "-negz.png" }
+        ].map(face => new Promise((resolve, reject) => {
+            const image = new Image();
+            image.src = url + face.suffix;
+            image.onload = () => {
+                gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
+                gl.texImage2D(face.type, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+                if (image && image.src) {
+                    console.log(`Loaded texture ${url}${face.suffix} [${image.width}x${image.height}]`);
+                }
+                resolve();
+            };
+            image.onerror = () => reject("Cannot load image");
+        }));
+        await Promise.all(promises);
+        gl.bindTexture(gl.TEXTURE_2D, null);
+        return texture;
     }
 }
 
@@ -89,8 +123,10 @@ class FullModel {
      * @returns Promise which resolves when model is loaded.
      */
     async load(url, gl) {
-        const dataIndices = await BinaryDataLoader.load(url + "-indices.bin");
-        const dataStrides = await BinaryDataLoader.load(url + "-strides.bin");
+        const [dataIndices, dataStrides] = await Promise.all([
+            BinaryDataLoader.load(`${url}-indices.bin`),
+            BinaryDataLoader.load(`${url}-strides.bin`)
+        ]);
         console.log(`Loaded ${url}-indices.bin (${dataIndices.byteLength} bytes)`);
         console.log(`Loaded ${url}-strides.bin (${dataStrides.byteLength} bytes)`);
         this.bufferIndices = gl.createBuffer();
@@ -2239,7 +2275,9 @@ function getTranslation(out, mat) {
   return out;
 }
 /**
- * Generates a orthogonal projection matrix with the given bounds
+ * Generates a orthogonal projection matrix with the given bounds.
+ * The near/far clip planes correspond to a normalized device coordinate Z range of [-1, 1],
+ * which matches WebGL/OpenGL's clip volume.
  *
  * @param {mat4} out mat4 frustum matrix will be written into
  * @param {number} left Left bound of the frustum
@@ -2251,7 +2289,7 @@ function getTranslation(out, mat) {
  * @returns {mat4} out
  */
 
-function ortho(out, left, right, bottom, top, near, far) {
+function orthoNO(out, left, right, bottom, top, near, far) {
   var lr = 1 / (left - right);
   var bt = 1 / (bottom - top);
   var nf = 1 / (near - far);
@@ -2273,6 +2311,12 @@ function ortho(out, left, right, bottom, top, near, far) {
   out[15] = 1;
   return out;
 }
+/**
+ * Alias for {@link mat4.orthoNO}
+ * @function
+ */
+
+var ortho = orthoNO;
 /**
  * Generates a look-at matrix with the given eye position, focal point, and up axis.
  * If you want a matrix that actually makes an object look at another object, you should use targetTo instead.
@@ -3262,7 +3306,7 @@ class DunesRenderer extends BaseRenderer {
     }
     async loadData() {
         var _a, _b;
-        await Promise.all([
+        const modelsPromise = Promise.all([
             this.fmSky.load("data/models/sky", this.gl),
             this.fmPalms.load("data/models/palms", this.gl),
             this.fmDunes.load("data/models/dunes", this.gl),
@@ -3270,15 +3314,18 @@ class DunesRenderer extends BaseRenderer {
             this.fmSun.load("data/models/sun_flare", this.gl),
             this.fmBird.load("data/models/bird-anim-uv", this.gl),
         ]);
-        const textures = await Promise.all([
-            await UncompressedTextureLoader.load("data/textures/" + this.PRESET.SKY + ".jpg", this.gl, undefined, undefined, true),
-            await UncompressedTextureLoader.load("data/textures/dunes-diffuse.jpg", this.gl),
-            await UncompressedTextureLoader.load("data/textures/upwind.png", this.gl),
-            await UncompressedTextureLoader.load("data/textures/detail.png", this.gl),
-            await UncompressedTextureLoader.load("data/textures/smoke.png", this.gl),
-            await UncompressedTextureLoader.load("data/textures/sun_flare.png", this.gl),
-            await UncompressedTextureLoader.load("data/textures/bird2.png", this.gl)
+        const texturesPromise = Promise.all([
+            UncompressedTextureLoader.load("data/textures/" + this.PRESET.SKY + ".jpg", this.gl, undefined, undefined, true),
+            UncompressedTextureLoader.load("data/textures/dunes-diffuse.jpg", this.gl),
+            UncompressedTextureLoader.load("data/textures/upwind.png", this.gl),
+            UncompressedTextureLoader.load("data/textures/detail.png", this.gl),
+            UncompressedTextureLoader.load("data/textures/smoke.png", this.gl),
+            UncompressedTextureLoader.load("data/textures/sun_flare.png", this.gl),
+            UncompressedTextureLoader.load("data/textures/bird2.png", this.gl),
+            UncompressedTextureLoader.load("data/textures/palm-alpha.png", this.gl, undefined, undefined, true),
+            UncompressedTextureLoader.load("data/textures/palm-diffuse.png", this.gl, undefined, undefined, true)
         ]);
+        const [models, textures] = await Promise.all([modelsPromise, texturesPromise]);
         this.skyTexture = textures[0];
         this.dunesDiffuseTexture = textures[1];
         this.dunesDustTexture = textures[2];
@@ -3286,8 +3333,16 @@ class DunesRenderer extends BaseRenderer {
         this.textureDustCloud = textures[4];
         this.textureSunFlare = textures[5];
         this.textureBird = textures[6];
-        this.palmTextureAlpha = await UncompressedTextureLoader.load("data/textures/palm-alpha.png", this.gl, undefined, undefined, true);
-        this.palmTextureDiffuse = await UncompressedTextureLoader.load("data/textures/palm-diffuse.png", this.gl, undefined, undefined, true);
+        this.palmTextureAlpha = textures[7];
+        this.palmTextureDiffuse = textures[8];
+        this.gl.bindTexture(this.gl.TEXTURE_2D, this.dunesDiffuseTexture);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR_MIPMAP_LINEAR);
+        this.gl.generateMipmap(this.gl.TEXTURE_2D);
+        this.gl.bindTexture(this.gl.TEXTURE_2D, this.dunesDetailTexture);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR_MIPMAP_LINEAR);
+        this.gl.generateMipmap(this.gl.TEXTURE_2D);
         this.initOffscreen();
         this.initVignette();
         this.loaded = true;

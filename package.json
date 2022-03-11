@@ -11,7 +11,7 @@
   "keywords": [],
   "homepage": "https://github.com/keaukraine/webgl-dunes#readme",
   "dependencies": {
-    "webgl-framework": "^2.1.2"
+    "webgl-framework": "^2.1.4"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^11.0.2",

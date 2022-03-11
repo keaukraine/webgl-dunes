@@ -330,7 +330,7 @@ export class DunesRenderer extends BaseRenderer {
     }
 
     async loadData(): Promise<void> {
-        await Promise.all([
+        const modelsPromise = Promise.all([
             this.fmSky.load("data/models/sky", this.gl),
             this.fmPalms.load("data/models/palms", this.gl),
             this.fmDunes.load("data/models/dunes", this.gl),
@@ -338,15 +338,19 @@ export class DunesRenderer extends BaseRenderer {
             this.fmSun.load("data/models/sun_flare", this.gl),
             this.fmBird.load("data/models/bird-anim-uv", this.gl),
         ]);
-        const textures = await Promise.all([
-            await UncompressedTextureLoader.load("data/textures/" + this.PRESET.SKY + ".jpg", this.gl, undefined, undefined, true),
-            await UncompressedTextureLoader.load("data/textures/dunes-diffuse.jpg", this.gl),
-            await UncompressedTextureLoader.load("data/textures/upwind.png", this.gl),
-            await UncompressedTextureLoader.load("data/textures/detail.png", this.gl),
-            await UncompressedTextureLoader.load("data/textures/smoke.png", this.gl),
-            await UncompressedTextureLoader.load("data/textures/sun_flare.png", this.gl),
-            await UncompressedTextureLoader.load("data/textures/bird2.png", this.gl)
+        const texturesPromise = Promise.all([
+            UncompressedTextureLoader.load("data/textures/" + this.PRESET.SKY + ".jpg", this.gl, undefined, undefined, true),
+            UncompressedTextureLoader.load("data/textures/dunes-diffuse.jpg", this.gl),
+            UncompressedTextureLoader.load("data/textures/upwind.png", this.gl),
+            UncompressedTextureLoader.load("data/textures/detail.png", this.gl),
+            UncompressedTextureLoader.load("data/textures/smoke.png", this.gl),
+            UncompressedTextureLoader.load("data/textures/sun_flare.png", this.gl),
+            UncompressedTextureLoader.load("data/textures/bird2.png", this.gl),
+            UncompressedTextureLoader.load("data/textures/palm-alpha.png", this.gl, undefined, undefined, true),
+            UncompressedTextureLoader.load("data/textures/palm-diffuse.png", this.gl, undefined, undefined, true)
         ]);
+
+        const [models, textures] = await Promise.all([modelsPromise, texturesPromise]);
 
         this.skyTexture = textures[0];
         this.dunesDiffuseTexture = textures[1];
@@ -356,8 +360,17 @@ export class DunesRenderer extends BaseRenderer {
         this.textureSunFlare = textures[5];
         this.textureBird = textures[6];
 
-        this.palmTextureAlpha = await UncompressedTextureLoader.load("data/textures/palm-alpha.png", this.gl, undefined, undefined, true);
-        this.palmTextureDiffuse = await UncompressedTextureLoader.load("data/textures/palm-diffuse.png", this.gl, undefined, undefined, true);
+        this.palmTextureAlpha = textures[7];
+        this.palmTextureDiffuse = textures[8];
+
+        this.gl.bindTexture(this.gl.TEXTURE_2D, this.dunesDiffuseTexture);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR_MIPMAP_LINEAR);
+        this.gl.generateMipmap(this.gl.TEXTURE_2D);
+        this.gl.bindTexture(this.gl.TEXTURE_2D, this.dunesDetailTexture);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MAG_FILTER, this.gl.LINEAR);
+        this.gl.texParameteri(this.gl.TEXTURE_2D, this.gl.TEXTURE_MIN_FILTER, this.gl.LINEAR_MIPMAP_LINEAR);
+        this.gl.generateMipmap(this.gl.TEXTURE_2D);
 
         this.initOffscreen();
         this.initVignette();
