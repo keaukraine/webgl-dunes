@@ -1,6 +1,13 @@
+![image](https://user-images.githubusercontent.com/414072/158967372-4d8160ae-31e9-4cbf-b3b2-7b5f215cfd21.png)
+
 # Dunes WebGL Demo
 
 Live demo page is available here: https://keaukraine.github.io/webgl-dunes/index.html
+
+Controls:
+
+* Mouse click changes time of day
+* By pressing Enter you can access free-camera mode. Movement is similar to UE4 - hold right mouse button for mouse look and use WASD to fly around.
 
 Full article explaining scene composition and shaders code: https://blog.devgenius.io/rendering-dunes-terrain-in-webgl-ac3dd2c67e8c
 
