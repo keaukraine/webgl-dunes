@@ -1,7 +1,6 @@
 import { FullModel, DiffuseShader } from "webgl-framework";
-import { RendererWithExposedMethods } from "webgl-framework/dist/types/RendererWithExposedMethods";
 
-export class SoftDiffuseColoredShader extends DiffuseShader {
+export class SoftDiffuseColoredPlsShader extends DiffuseShader {
     view_proj_matrix: WebGLUniformLocation | undefined;
     model_matrix: WebGLUniformLocation | undefined;
     sTexture: WebGLUniformLocation | undefined;
@@ -28,7 +27,9 @@ export class SoftDiffuseColoredShader extends DiffuseShader {
             }`;
 
         this.fragmentShaderCode = `#version 300 es
+            #extension GL_ANGLE_shader_pixel_local_storage : require
             precision highp float;
+
             uniform vec2 uCameraRange;
             uniform vec2 uInvViewportSize;
             uniform float uTransitionSize;
@@ -43,6 +44,8 @@ export class SoftDiffuseColoredShader extends DiffuseShader {
 
             out vec4 fragColor;
 
+            layout(binding=0, r32f) uniform highp pixelLocalANGLE pls;
+
             void main() {
                vec4 diffuse = texture(sTexture, vTextureCoord) * color; // particle base diffuse color
             //    diffuse += vec4(0.0, 0.0, 1.0, 1.0); // uncomment to visualize particle shape
@@ -53,6 +56,10 @@ export class SoftDiffuseColoredShader extends DiffuseShader {
                float b = smoothstep(0.0, uTransitionSize, a); // apply smoothstep to make soft transition
                fragColor = diffuse * b; // final color with soft edge
                fragColor *= pow(1.0 - gl_FragCoord.z, 0.3);
+
+               float z_pls = calc_depth(pixelLocalLoadANGLE(pls).x);
+               fragColor.r = z_pls * 3.;
+
             //    fragColor = vec4(a, a, a, 1.0); // uncomment to visualize raw Z difference
             //    fragColor = vec4(b, b, b, 1.0); // uncomment to visualize blending coefficient
             }`;

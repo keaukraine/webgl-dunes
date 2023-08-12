@@ -1,3 +1,5 @@
+
+(function(l, r) { if (l.getElementById('livereloadscript')) return; r = l.createElement('script'); r.async = 1; r.src = '//' + (window.location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1'; r.id = 'livereloadscript'; l.getElementsByTagName('head')[0].appendChild(r) })(window.document);
 class FullScreenUtils {
     /** Enters fullscreen. */
     enterFullScreen() {
@@ -1729,6 +1731,7 @@ class DiffuseShader extends BaseShader {
         renderer.checkGlError("DiffuseShader glDrawElements");
     }
 }
+//# sourceMappingURL=webgl-framework.es6.js.map
 
 /**
  * Common utilities
@@ -2551,84 +2554,91 @@ class DunesShader extends DiffuseShader {
         return new DunesShader(gl);
     }
     fillCode() {
-        this.vertexShaderCode = "uniform mat4 view_proj_matrix;\n" +
-            "attribute vec4 rm_Vertex;\n" +
-            "attribute vec2 rm_TexCoord0;\n" +
-            "attribute vec3 rm_Normal;\n" +
-            "varying vec2 vTextureCoord;\n" +
-            "varying vec2 vUpwindTexCoord;\n" +
-            "varying vec2 vLeewardTexCoord2;\n" +
-            "varying vec2 vWindSpotsTexCoord;\n" +
-            "varying vec3 vNormal;\n" +
-            "varying float vSlopeCoeff;\n" + // Windward slope coefficient
-            "varying float vSlopeCoeff2;\n" + // Leeward slope coefficient
-            "varying vec2 vDetailCoord1;\n" +
-            "varying float vFogAmount;\n" +
-            "varying float vDetailFade;\n" +
-            "\n" +
-            "uniform float fogDistance;\n" +
-            "uniform float fogStartDistance;\n" +
-            "uniform float detailDistance;\n" +
-            "uniform float detailStartDistance;\n" +
-            "uniform float uTime;\n" +
-            "\n" +
-            "void main() {\n" +
-            "  gl_Position = view_proj_matrix * rm_Vertex;\n" +
-            "  vTextureCoord = rm_TexCoord0;\n" +
-            "  vNormal = rm_Normal;\n" +
-            "  vSlopeCoeff = clamp( 4.0*dot(vNormal, normalize(vec3(1.0, 0.0, 0.13))), 0.0, 1.0);\n" +
-            "  vSlopeCoeff2 = clamp( 14.0*dot(vNormal, normalize(vec3(-1.0, 0.0, -0.2))), 0.0, 1.0);\n" +
-            "  vUpwindTexCoord = vTextureCoord * vec2(100.0, 10.0);\n" +
-            "  vUpwindTexCoord.y += uTime;\n" +
-            "  vDetailCoord1 = rm_TexCoord0 * vec2(100.0, 100.0);\n" +
-            "  vLeewardTexCoord2 = vTextureCoord * vec2(20.0, 30.0);\n" +
-            "  vLeewardTexCoord2.y += uTime;\n" +
-            "  vWindSpotsTexCoord = vTextureCoord * vec2(1.5, 1.5);\n" +
-            "  vWindSpotsTexCoord.x += uTime * 0.1;\n" +
-            "  vFogAmount = clamp((length(gl_Position) - fogStartDistance) / fogDistance, 0.0, 1.0);\n" +
-            "  vDetailFade = 1.0 - clamp((length(gl_Position) - detailStartDistance) / detailDistance, 0.0, 1.0);\n" +
-            "}";
-        this.fragmentShaderCode = "precision mediump float;\n" +
-            "varying vec2 vTextureCoord;\n" +
-            "varying vec3 vNormal;\n" +
-            "varying float vSlopeCoeff;\n" +
-            "varying float vSlopeCoeff2;\n" +
-            "varying vec2 vUpwindTexCoord;\n" +
-            "varying vec2 vLeewardTexCoord2;\n" +
-            "varying vec2 vWindSpotsTexCoord;\n" +
-            "varying vec2 vDetailCoord1;\n" +
-            "varying float vFogAmount;\n" +
-            "varying float vDetailFade;\n" +
-            "uniform sampler2D sTexture;\n" +
-            "uniform sampler2D sDust;\n" +
-            "uniform sampler2D sDetail1;\n" +
-            "uniform float uDustOpacity;\n" +
-            "uniform vec4 uColor;\n" +
-            "uniform vec4 uFogColor;\n" +
-            "uniform vec4 uShadowColor;\n" +
-            "uniform vec4 uWavesColor;\n" +
-            "void main() {\n" +
-            "  vec4 windward = texture2D(sDust, vUpwindTexCoord);\n" +
-            "  vec4 leeward2 = texture2D(sDust, vLeewardTexCoord2);\n" +
-            "  vec4 detailColor = texture2D(sDetail1, vDetailCoord1);" +
-            "  float detail1 = detailColor.g - 0.5;\n" +
-            "  float detail2 = detailColor.r - 0.5;\n" +
-            "  detail1 *= vDetailFade;\n" +
-            "  detail2 *= vDetailFade;\n" +
-            "  vec4 textureData = texture2D(sTexture, vTextureCoord);\n" +
-            "  gl_FragColor = textureData.r * uColor;\n" +
-            // "  gl_FragColor.b += vSlopeCoeff;\n" + // windward slopes visualization
-            // "  gl_FragColor.g += vSlopeCoeff2;\n" + // leeward slopes visualization
-            "  vec4 waves = windward * uDustOpacity * vSlopeCoeff;\n" +
-            "  waves += leeward2 * uDustOpacity * vSlopeCoeff2;\n" +
-            "  waves *= 1.0 - clamp(texture2D(sDust, vWindSpotsTexCoord).r * 5.0, 0.0, 1.0);\n" +
-            "  gl_FragColor += waves * uWavesColor;\n" +
-            "  gl_FragColor.rgb += mix(detail2, detail1, vSlopeCoeff2);\n" +
-            "  gl_FragColor *= mix(uShadowColor, vec4(1.0, 1.0, 1.0, 1.0), textureData[" + DunesShader.lightmapIndex + "]);" +
-            "  gl_FragColor = mix(gl_FragColor, uFogColor, vFogAmount);\n" +
-            // "  gl_FragColor.r = vDetailFade;\n" + // detail distance visualization
-            // "  gl_FragColor.r = texture2D(sDust, vWindSpotsTexCoord).r;\n" + // wind terrain spots visualization
-            "}";
+        this.vertexShaderCode = `uniform mat4 view_proj_matrix;
+            attribute vec4 rm_Vertex;
+            attribute vec2 rm_TexCoord0;
+            attribute vec3 rm_Normal;
+            varying vec2 vTextureCoord;
+            varying vec2 vUpwindTexCoord;
+            varying vec2 vLeewardTexCoord2;
+            varying vec2 vWindSpotsTexCoord;
+            varying vec3 vNormal;
+            varying float vSlopeCoeff; // Windward slope coefficient
+            varying float vSlopeCoeff2; // Leeward slope coefficient
+            varying vec2 vDetailCoord1;
+            varying float vFogAmount;
+            varying float vDetailFade;
+
+            uniform float fogDistance;
+            uniform float fogStartDistance;
+            uniform float detailDistance;
+            uniform float detailStartDistance;
+            uniform float uTime;
+
+            void main() {
+              gl_Position = view_proj_matrix * rm_Vertex;
+              vTextureCoord = rm_TexCoord0;
+              vNormal = rm_Normal;
+              vSlopeCoeff = clamp( 4.0*dot(vNormal, normalize(vec3(1.0, 0.0, 0.13))), 0.0, 1.0);
+              vSlopeCoeff2 = clamp( 14.0*dot(vNormal, normalize(vec3(-1.0, 0.0, -0.2))), 0.0, 1.0);
+              vUpwindTexCoord = vTextureCoord * vec2(100.0, 10.0);
+              vUpwindTexCoord.y += uTime;
+
+              vDetailCoord1 = rm_TexCoord0 * vec2(100.0, 100.0);
+
+              vLeewardTexCoord2 = vTextureCoord * vec2(20.0, 30.0);
+              vLeewardTexCoord2.y += uTime;
+
+              vWindSpotsTexCoord = vTextureCoord * vec2(1.5, 1.5);
+              vWindSpotsTexCoord.x += uTime * 0.1;
+              vFogAmount = clamp((length(gl_Position) - fogStartDistance) / fogDistance, 0.0, 1.0);
+              vDetailFade = 1.0 - clamp((length(gl_Position) - detailStartDistance) / detailDistance, 0.0, 1.0);
+            }`;
+        this.fragmentShaderCode = `precision mediump float;
+            varying vec2 vTextureCoord;
+            varying vec3 vNormal;
+            varying float vSlopeCoeff;
+            varying float vSlopeCoeff2;
+            varying vec2 vUpwindTexCoord;
+            varying vec2 vLeewardTexCoord2;
+            varying vec2 vWindSpotsTexCoord;
+            varying vec2 vDetailCoord1;
+            varying float vFogAmount;
+            varying float vDetailFade;
+
+            uniform sampler2D sTexture;
+            uniform sampler2D sDust;
+            uniform sampler2D sDetail1;
+            uniform float uDustOpacity;
+            uniform vec4 uColor;
+            uniform vec4 uFogColor;
+            uniform vec4 uShadowColor;
+            uniform vec4 uWavesColor;
+
+            void main() {
+              vec4 windward = texture2D(sDust, vUpwindTexCoord);
+              vec4 leeward2 = texture2D(sDust, vLeewardTexCoord2);
+              vec4 detailColor = texture2D(sDetail1, vDetailCoord1);
+              float detail1 = detailColor.g - 0.5;
+              float detail2 = detailColor.r - 0.5;
+
+              detail1 *= vDetailFade;
+              detail2 *= vDetailFade;
+
+              vec4 textureData = texture2D(sTexture, vTextureCoord);
+              gl_FragColor = textureData.r * uColor;
+              // gl_FragColor.b += vSlopeCoeff; // windward slopes visualization
+              // gl_FragColor.g += vSlopeCoeff2; // leeward slopes visualization
+              vec4 waves = windward * uDustOpacity * vSlopeCoeff;
+              waves += leeward2 * uDustOpacity * vSlopeCoeff2;
+              waves *= 1.0 - clamp(texture2D(sDust, vWindSpotsTexCoord).r * 5.0, 0.0, 1.0);
+              gl_FragColor += waves * uWavesColor;
+              gl_FragColor.rgb += mix(detail2, detail1, vSlopeCoeff2);
+              gl_FragColor *= mix(uShadowColor, vec4(1.0, 1.0, 1.0, 1.0), textureData[${DunesShader.lightmapIndex}]);
+              gl_FragColor = mix(gl_FragColor, uFogColor, vFogAmount);
+              // gl_FragColor.r = vDetailFade; // detail distance visualization
+              // gl_FragColor.r = texture2D(sDust, vWindSpotsTexCoord).r; // wind terrain spots visualization
+            }`;
     }
     fillUniformsAttributes() {
         super.fillUniformsAttributes();
@@ -2648,6 +2658,7 @@ class DunesShader extends DiffuseShader {
     }
 }
 DunesShader.lightmapIndex = 0;
+//# sourceMappingURL=DunesShader.js.map
 
 const particlesCoordinates = [
     [
@@ -2800,44 +2811,50 @@ const particlesCoordinates = [
         [12.507367, 21.285116, -6.593583]
     ]
 ];
+//# sourceMappingURL=DuneCapsParticles.js.map
 
 class SoftDiffuseColoredShader extends DiffuseShader {
     fillCode() {
-        this.vertexShaderCode = "uniform mat4 view_proj_matrix;\n" +
-            "attribute vec4 rm_Vertex;\n" +
-            "attribute vec2 rm_TexCoord0;\n" +
-            "varying vec2 vTextureCoord;\n" +
-            "\n" +
-            "void main() {\n" +
-            "  gl_Position = view_proj_matrix * rm_Vertex;\n" +
-            "  vTextureCoord = rm_TexCoord0;\n" +
-            "}";
-        this.fragmentShaderCode = "precision highp float;\n" +
-            "uniform vec2 uCameraRange;\n" +
-            "uniform vec2 uInvViewportSize;\n" +
-            "uniform float uTransitionSize;\n" +
-            "float calc_depth(in float z)\n" +
-            "{\n" +
-            "  return (2.0 * uCameraRange.x) / (uCameraRange.y + uCameraRange.x - z*(uCameraRange.y - uCameraRange.x));\n" +
-            "}\n" +
-            "uniform sampler2D sDepth;\n" +
-            "varying vec2 vTextureCoord;\n" +
-            "uniform sampler2D sTexture;\n" +
-            "uniform vec4 color;\n" +
-            "\n" +
-            "void main() {\n" +
-            "   vec4 diffuse = texture2D(sTexture, vTextureCoord) * color;\n" + // particle base diffuse color
-            // "   diffuse += vec4(0.0, 0.0, 1.0, 1.0);\n"+ // uncomment to visualize particle shape
-            "   vec2 coords = gl_FragCoord.xy * uInvViewportSize;\n" + // calculate depth texture coordinates
-            "   float geometryZ = calc_depth(texture2D(sDepth, coords).r);\n" + // lineriarize particle depth
-            "   float sceneZ = calc_depth(gl_FragCoord.z);\n" + // lineriarize scene depth
-            "   float a = clamp(geometryZ - sceneZ, 0.0, 1.0);\n" + // linear clamped diff between scene and particle depth
-            "   float b = smoothstep(0.0, uTransitionSize, a);\n" + // apply smoothstep to make soft transition
-            "   gl_FragColor = diffuse * b;\n" + // final color with soft edge
-            "   gl_FragColor *= pow(1.0 - gl_FragCoord.z, 0.3);\n" +
-            // "   gl_FragColor = vec4(a, a, a, 1.0);\n" + // uncomment to visualize raw Z difference
-            // "   gl_FragColor = vec4(b, b, b, 1.0);\n" + // uncomment to visualize blending coefficient
-            "}";
+        this.vertexShaderCode = `#version 300 es
+            precision highp float;
+            uniform mat4 view_proj_matrix;
+            in vec4 rm_Vertex;
+            in vec2 rm_TexCoord0;
+            out vec2 vTextureCoord;
+
+            void main() {
+              gl_Position = view_proj_matrix * rm_Vertex;
+              vTextureCoord = rm_TexCoord0;
+            }`;
+        this.fragmentShaderCode = `#version 300 es
+            precision highp float;
+            uniform vec2 uCameraRange;
+            uniform vec2 uInvViewportSize;
+            uniform float uTransitionSize;
+            float calc_depth(in float z)
+            {
+              return (2.0 * uCameraRange.x) / (uCameraRange.y + uCameraRange.x - z*(uCameraRange.y - uCameraRange.x));
+            }
+            uniform sampler2D sDepth;
+            in vec2 vTextureCoord;
+            uniform sampler2D sTexture;
+            uniform vec4 color;
+
+            out vec4 fragColor;
+
+            void main() {
+               vec4 diffuse = texture(sTexture, vTextureCoord) * color; // particle base diffuse color
+            //    diffuse += vec4(0.0, 0.0, 1.0, 1.0); // uncomment to visualize particle shape
+               vec2 coords = gl_FragCoord.xy * uInvViewportSize; // calculate depth texture coordinates
+               float geometryZ = calc_depth(texture(sDepth, coords).r); // lineriarize particle depth
+               float sceneZ = calc_depth(gl_FragCoord.z); // lineriarize scene depth
+               float a = clamp(geometryZ - sceneZ, 0.0, 1.0); // linear clamped diff between scene and particle depth
+               float b = smoothstep(0.0, uTransitionSize, a); // apply smoothstep to make soft transition
+               fragColor = diffuse * b; // final color with soft edge
+               fragColor *= pow(1.0 - gl_FragCoord.z, 0.3);
+            //    fragColor = vec4(a, a, a, 1.0); // uncomment to visualize raw Z difference
+            //    fragColor = vec4(b, b, b, 1.0); // uncomment to visualize blending coefficient
+            }`;
     }
     fillUniformsAttributes() {
         this.view_proj_matrix = this.getUniform("view_proj_matrix");
@@ -2851,6 +2868,7 @@ class SoftDiffuseColoredShader extends DiffuseShader {
         this.color = this.getUniform("color");
     }
 }
+//# sourceMappingURL=SoftDiffuseColoredShader.js.map
 
 class DiffuseColoredShader extends DiffuseShader {
     constructor() {
@@ -2886,6 +2904,7 @@ class DiffuseColoredShader extends DiffuseShader {
         super.drawModel(renderer, model, tx, ty, tz, rx, ry, rz, sx, sy, sz);
     }
 }
+//# sourceMappingURL=DiffuseColoredShader.js.map
 
 class DiffuseColoredShaderAlpha extends DiffuseShader {
     constructor() {
@@ -2925,6 +2944,7 @@ class DiffuseColoredShaderAlpha extends DiffuseShader {
         super.drawModel(renderer, model, tx, ty, tz, rx, ry, rz, sx, sy, sz);
     }
 }
+//# sourceMappingURL=DiffuseColoredShaderAlpha.js.map
 
 class DiffuseAnimatedShader extends BaseShader {
     fillCode() {
@@ -2978,6 +2998,7 @@ class DiffuseAnimatedShader extends BaseShader {
         renderer.checkGlError("glDrawElements");
     }
 }
+//# sourceMappingURL=DiffuseAnimatedShader.js.map
 
 class DiffuseATColoredAnimatedShader extends DiffuseAnimatedShader {
     fillCode() {
@@ -3000,12 +3021,14 @@ class DiffuseATColoredAnimatedShader extends DiffuseAnimatedShader {
         this.color = this.getUniform("color");
     }
 }
+//# sourceMappingURL=DiffuseATColoredAnimatedShader.js.map
 
 var CameraMode;
 (function (CameraMode) {
     CameraMode[CameraMode["Rotating"] = 0] = "Rotating";
     CameraMode[CameraMode["Random"] = 1] = "Random";
 })(CameraMode || (CameraMode = {}));
+//# sourceMappingURL=CameraMode.js.map
 
 /**
  * Renders geometries with dummy green color.
@@ -3028,6 +3051,187 @@ class DepthRenderShader extends BaseShader {
         this.view_proj_matrix = this.getUniform("view_proj_matrix");
     }
 }
+//# sourceMappingURL=DepthRenderShader.js.map
+
+class DunesPlsShader extends DunesShader {
+    static getInstance(gl, lightmapIndex) {
+        DunesPlsShader.lightmapIndexPls = lightmapIndex;
+        return new DunesPlsShader(gl);
+    }
+    fillCode() {
+        this.vertexShaderCode = `#version 300 es
+            precision highp float;
+            uniform mat4 view_proj_matrix;
+
+            in vec4 rm_Vertex;
+            in vec2 rm_TexCoord0;
+            in vec3 rm_Normal;
+
+            out vec2 vTextureCoord;
+            out vec2 vUpwindTexCoord;
+            out vec2 vLeewardTexCoord2;
+            out vec2 vWindSpotsTexCoord;
+            out vec3 vNormal;
+            out float vSlopeCoeff; // Windward slope coefficient
+            out float vSlopeCoeff2; // Leeward slope coefficient
+            out vec2 vDetailCoord1;
+            out float vFogAmount;
+            out float vDetailFade;
+
+            uniform float fogDistance;
+            uniform float fogStartDistance;
+            uniform float detailDistance;
+            uniform float detailStartDistance;
+            uniform float uTime;
+
+            void main() {
+              gl_Position = view_proj_matrix * rm_Vertex;
+              vTextureCoord = rm_TexCoord0;
+              vNormal = rm_Normal;
+              vSlopeCoeff = clamp( 4.0*dot(vNormal, normalize(vec3(1.0, 0.0, 0.13))), 0.0, 1.0);
+              vSlopeCoeff2 = clamp( 14.0*dot(vNormal, normalize(vec3(-1.0, 0.0, -0.2))), 0.0, 1.0);
+              vUpwindTexCoord = vTextureCoord * vec2(100.0, 10.0);
+              vUpwindTexCoord.y += uTime;
+
+              vDetailCoord1 = rm_TexCoord0 * vec2(100.0, 100.0);
+
+              vLeewardTexCoord2 = vTextureCoord * vec2(20.0, 30.0);
+              vLeewardTexCoord2.y += uTime;
+
+              vWindSpotsTexCoord = vTextureCoord * vec2(1.5, 1.5);
+              vWindSpotsTexCoord.x += uTime * 0.1;
+              vFogAmount = clamp((length(gl_Position) - fogStartDistance) / fogDistance, 0.0, 1.0);
+              vDetailFade = 1.0 - clamp((length(gl_Position) - detailStartDistance) / detailDistance, 0.0, 1.0);
+            }`;
+        this.fragmentShaderCode = `#version 300 es
+            #extension GL_ANGLE_shader_pixel_local_storage : require
+            precision mediump float;
+
+            in vec2 vTextureCoord;
+            in vec3 vNormal;
+            in float vSlopeCoeff;
+            in float vSlopeCoeff2;
+            in vec2 vUpwindTexCoord;
+            in vec2 vLeewardTexCoord2;
+            in vec2 vWindSpotsTexCoord;
+            in vec2 vDetailCoord1;
+            in float vFogAmount;
+            in float vDetailFade;
+
+            out vec4 fragColor;
+
+            layout(binding=0, r32f) uniform highp pixelLocalANGLE pls;
+
+            uniform sampler2D sTexture;
+            uniform sampler2D sDust;
+            uniform sampler2D sDetail1;
+            uniform float uDustOpacity;
+            uniform vec4 uColor;
+            uniform vec4 uFogColor;
+            uniform vec4 uShadowColor;
+            uniform vec4 uWavesColor;
+
+            void main() {
+              vec4 windward = texture(sDust, vUpwindTexCoord);
+              vec4 leeward2 = texture(sDust, vLeewardTexCoord2);
+              vec4 detailColor = texture(sDetail1, vDetailCoord1);
+              float detail1 = detailColor.g - 0.5;
+              float detail2 = detailColor.r - 0.5;
+
+              detail1 *= vDetailFade;
+              detail2 *= vDetailFade;
+
+              vec4 textureData = texture(sTexture, vTextureCoord);
+              fragColor = textureData.r * uColor;
+              // fragColor.b += vSlopeCoeff; // windward slopes visualization
+              // fragColor.g += vSlopeCoeff2; // leeward slopes visualization
+              vec4 waves = windward * uDustOpacity * vSlopeCoeff;
+              waves += leeward2 * uDustOpacity * vSlopeCoeff2;
+              waves *= 1.0 - clamp(texture(sDust, vWindSpotsTexCoord).r * 5.0, 0.0, 1.0);
+              fragColor += waves * uWavesColor;
+              fragColor.rgb += mix(detail2, detail1, vSlopeCoeff2);
+              fragColor *= mix(uShadowColor, vec4(1.0, 1.0, 1.0, 1.0), textureData[${DunesPlsShader.lightmapIndexPls}]);
+              fragColor = mix(fragColor, uFogColor, vFogAmount);
+              // fragColor.r = vDetailFade; // detail distance visualization
+              // fragColor.r = texture(sDust, vWindSpotsTexCoord).r; // wind terrain spots visualization
+
+            //   pixelLocalStoreANGLE(pls, vec4(gl_FragCoord.z));
+              pixelLocalStoreANGLE(pls, vec4(1.,1.,1.,1.));
+            //   fragColor *= 0.00001;
+            //   fragColor += vec4(gl_FragCoord.z);
+            }`;
+    }
+    fillUniformsAttributes() {
+        super.fillUniformsAttributes();
+    }
+}
+DunesPlsShader.lightmapIndexPls = 0;
+//# sourceMappingURL=DunesPlsShader.js.map
+
+class SoftDiffuseColoredPlsShader extends DiffuseShader {
+    fillCode() {
+        this.vertexShaderCode = `#version 300 es
+            precision highp float;
+            uniform mat4 view_proj_matrix;
+            in vec4 rm_Vertex;
+            in vec2 rm_TexCoord0;
+            out vec2 vTextureCoord;
+
+            void main() {
+              gl_Position = view_proj_matrix * rm_Vertex;
+              vTextureCoord = rm_TexCoord0;
+            }`;
+        this.fragmentShaderCode = `#version 300 es
+            #extension GL_ANGLE_shader_pixel_local_storage : require
+            precision highp float;
+
+            uniform vec2 uCameraRange;
+            uniform vec2 uInvViewportSize;
+            uniform float uTransitionSize;
+            float calc_depth(in float z)
+            {
+              return (2.0 * uCameraRange.x) / (uCameraRange.y + uCameraRange.x - z*(uCameraRange.y - uCameraRange.x));
+            }
+            uniform sampler2D sDepth;
+            in vec2 vTextureCoord;
+            uniform sampler2D sTexture;
+            uniform vec4 color;
+
+            out vec4 fragColor;
+
+            layout(binding=0, r32f) uniform highp pixelLocalANGLE pls;
+
+            void main() {
+               vec4 diffuse = texture(sTexture, vTextureCoord) * color; // particle base diffuse color
+            //    diffuse += vec4(0.0, 0.0, 1.0, 1.0); // uncomment to visualize particle shape
+               vec2 coords = gl_FragCoord.xy * uInvViewportSize; // calculate depth texture coordinates
+               float geometryZ = calc_depth(texture(sDepth, coords).r); // lineriarize particle depth
+               float sceneZ = calc_depth(gl_FragCoord.z); // lineriarize scene depth
+               float a = clamp(geometryZ - sceneZ, 0.0, 1.0); // linear clamped diff between scene and particle depth
+               float b = smoothstep(0.0, uTransitionSize, a); // apply smoothstep to make soft transition
+               fragColor = diffuse * b; // final color with soft edge
+               fragColor *= pow(1.0 - gl_FragCoord.z, 0.3);
+
+               float z_pls = calc_depth(pixelLocalLoadANGLE(pls).x);
+               fragColor.r = z_pls * 3.;
+
+            //    fragColor = vec4(a, a, a, 1.0); // uncomment to visualize raw Z difference
+            //    fragColor = vec4(b, b, b, 1.0); // uncomment to visualize blending coefficient
+            }`;
+    }
+    fillUniformsAttributes() {
+        this.view_proj_matrix = this.getUniform("view_proj_matrix");
+        this.rm_Vertex = this.getAttrib("rm_Vertex");
+        this.rm_TexCoord0 = this.getAttrib("rm_TexCoord0");
+        this.sTexture = this.getUniform("sTexture");
+        this.cameraRange = this.getUniform("uCameraRange");
+        this.sDepth = this.getUniform("sDepth");
+        this.invViewportSize = this.getUniform("uInvViewportSize");
+        this.transitionSize = this.getUniform("uTransitionSize");
+        this.color = this.getUniform("color");
+    }
+}
+//# sourceMappingURL=SoftDiffuseColoredPlsShader.js.map
 
 const FOV_LANDSCAPE = 70.0; // FOV for landscape
 const FOV_PORTRAIT = 80.0; // FOV for portrait
@@ -3048,6 +3252,7 @@ class DunesRenderer extends BaseRenderer {
         this.fmSun = new FullModel();
         this.fmBird = new FullModel();
         this.shaderDunesPermutations = [];
+        this.shaderDunesPlsPermutations = [];
         this.Z_NEAR = 20.0;
         this.Z_FAR = 40000.0;
         this.SMOKE_SOFTNESS = 0.012;
@@ -3279,6 +3484,8 @@ class DunesRenderer extends BaseRenderer {
     }
     get shaderDunes() { return this.shaderDunesPermutations[this.PRESET.DUNES_SHADER]; }
     ;
+    get shaderDunesPls() { return this.shaderDunesPlsPermutations[this.PRESET.DUNES_SHADER]; }
+    ;
     setCustomCamera(camera) {
         this.customCamera = camera;
     }
@@ -3295,6 +3502,12 @@ class DunesRenderer extends BaseRenderer {
         (_b = document.getElementById("alertError")) === null || _b === void 0 ? void 0 : _b.classList.remove("hidden");
     }
     initShaders() {
+        this.initPls();
+        if (this.pls) {
+            this.shaderDunesPlsPermutations.push(DunesPlsShader.getInstance(this.gl, 1));
+            this.shaderDunesPlsPermutations.push(DunesPlsShader.getInstance(this.gl, 2));
+            this.shaderSoftDiffuseColoredPls = new SoftDiffuseColoredPlsShader(this.gl);
+        }
         this.shaderDiffuse = new DiffuseShader(this.gl);
         this.shaderSoftDiffuseColored = new SoftDiffuseColoredShader(this.gl);
         this.sunShader = new DiffuseColoredShader(this.gl);
@@ -3451,7 +3664,8 @@ class DunesRenderer extends BaseRenderer {
         this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null); // This differs from OpenGL ES
         this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-        this.drawSceneObjects();
+        // this.drawSceneObjects();
+        this.drawSceneObjectsPls();
         // this.drawTestDepth();
     }
     drawTestDepth() {
@@ -3499,26 +3713,70 @@ class DunesRenderer extends BaseRenderer {
         this.gl.uniform1f(this.shaderDunes.fogDistance, this.PRESET.FOG_DISTANCE);
         this.gl.uniform1f(this.shaderDunes.detailStartDistance, 400);
         this.gl.uniform1f(this.shaderDunes.detailDistance, 1200);
-        this.drawDunes(this.fmDunes, 0, 0, 0, 0, 0, 0, TERRAIN_SCALE, TERRAIN_SCALE, TERRAIN_SCALE);
+        this.drawDunes(this.fmDunes, this.shaderDunes, 0, 0, 0, 0, 0, 0, TERRAIN_SCALE, TERRAIN_SCALE, TERRAIN_SCALE);
         // -45.15 * 2 = 90.3
         const SKIRT_SCALE = 1.5;
         const SKIRT_OFFSET = 9030 / 2 + (9030 / 2 * SKIRT_SCALE);
         this.gl.cullFace(this.gl.FRONT);
-        this.drawDunes(this.fmDunes, SKIRT_OFFSET, 0, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE, TERRAIN_SCALE);
-        this.drawDunes(this.fmDunes, -SKIRT_OFFSET, 0, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE, TERRAIN_SCALE);
-        this.drawDunes(this.fmDunes, 0, SKIRT_OFFSET, 0, 0, 0, 0, TERRAIN_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
-        this.drawDunes(this.fmDunes, 0, -SKIRT_OFFSET, 0, 0, 0, 0, TERRAIN_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
+        this.drawDunes(this.fmDunes, this.shaderDunes, SKIRT_OFFSET, 0, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE, TERRAIN_SCALE);
+        this.drawDunes(this.fmDunes, this.shaderDunes, -SKIRT_OFFSET, 0, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE, TERRAIN_SCALE);
+        this.drawDunes(this.fmDunes, this.shaderDunes, 0, SKIRT_OFFSET, 0, 0, 0, 0, TERRAIN_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
+        this.drawDunes(this.fmDunes, this.shaderDunes, 0, -SKIRT_OFFSET, 0, 0, 0, 0, TERRAIN_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
         this.gl.cullFace(this.gl.BACK);
-        this.drawDunes(this.fmDunes, SKIRT_OFFSET, SKIRT_OFFSET, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
-        this.drawDunes(this.fmDunes, -SKIRT_OFFSET, -SKIRT_OFFSET, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
-        this.drawDunes(this.fmDunes, SKIRT_OFFSET, -SKIRT_OFFSET, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
-        this.drawDunes(this.fmDunes, -SKIRT_OFFSET, SKIRT_OFFSET, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
+        this.drawDunes(this.fmDunes, this.shaderDunes, SKIRT_OFFSET, SKIRT_OFFSET, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
+        this.drawDunes(this.fmDunes, this.shaderDunes, -SKIRT_OFFSET, -SKIRT_OFFSET, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
+        this.drawDunes(this.fmDunes, this.shaderDunes, SKIRT_OFFSET, -SKIRT_OFFSET, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
+        this.drawDunes(this.fmDunes, this.shaderDunes, -SKIRT_OFFSET, SKIRT_OFFSET, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
         this.drawBirds();
         this.drawPalmTrees();
         this.shaderDiffuse.use();
         this.setTexture2D(0, this.skyTexture, this.shaderDiffuse.sTexture);
         this.shaderDiffuse.drawModel(this, this.fmSky, 0, 0, -1200, 0, 0, 0, 150, 150, 150);
         this.drawSoftSpriteParticles();
+        this.drawSun();
+    }
+    drawSceneObjectsPls() {
+        if (this.shaderDiffuse === undefined) {
+            console.log("undefined shaders");
+            return;
+        }
+        this.pls.beginPixelLocalStorageWEBGL([this.pls.LOAD_OP_CLEAR_WEBGL]);
+        this.gl.disable(this.gl.BLEND);
+        this.shaderDunesPls.use();
+        this.setTexture2D(0, this.dunesDiffuseTexture, this.shaderDunesPls.sTexture);
+        this.setTexture2D(1, this.dunesDustTexture, this.shaderDunesPls.sDust);
+        this.setTexture2D(2, this.dunesDetailTexture, this.shaderDunesPls.sDetail1);
+        this.gl.uniform1f(this.shaderDunesPls.uDustOpacity, 0.075);
+        this.gl.uniform1f(this.shaderDunesPls.uTime, this.dustTimer);
+        this.gl.uniform4f(this.shaderDunesPls.uColor, this.PRESET.SAND_COLOR.r, this.PRESET.SAND_COLOR.g, this.PRESET.SAND_COLOR.b, 1.0);
+        this.gl.uniform4f(this.shaderDunesPls.uFogColor, this.PRESET.FOG_COLOR.r, this.PRESET.FOG_COLOR.g, this.PRESET.FOG_COLOR.b, 1.0);
+        this.gl.uniform4f(this.shaderDunesPls.uShadowColor, this.PRESET.SHADOW_COLOR.r, this.PRESET.SHADOW_COLOR.g, this.PRESET.SHADOW_COLOR.b, 1.0);
+        this.gl.uniform4f(this.shaderDunesPls.uWavesColor, this.PRESET.WAVES_COLOR.r, this.PRESET.WAVES_COLOR.g, this.PRESET.WAVES_COLOR.b, 1.0);
+        this.gl.uniform1f(this.shaderDunesPls.fogStartDistance, this.PRESET.FOG_START_DISTANCE);
+        this.gl.uniform1f(this.shaderDunesPls.fogDistance, this.PRESET.FOG_DISTANCE);
+        this.gl.uniform1f(this.shaderDunesPls.detailStartDistance, 400);
+        this.gl.uniform1f(this.shaderDunesPls.detailDistance, 1200);
+        this.drawDunes(this.fmDunes, this.shaderDunesPls, 0, 0, 0, 0, 0, 0, TERRAIN_SCALE, TERRAIN_SCALE, TERRAIN_SCALE);
+        // -45.15 * 2 = 90.3
+        const SKIRT_SCALE = 1.5;
+        const SKIRT_OFFSET = 9030 / 2 + (9030 / 2 * SKIRT_SCALE);
+        this.gl.cullFace(this.gl.FRONT);
+        this.drawDunes(this.fmDunes, this.shaderDunesPls, SKIRT_OFFSET, 0, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE, TERRAIN_SCALE);
+        this.drawDunes(this.fmDunes, this.shaderDunesPls, -SKIRT_OFFSET, 0, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE, TERRAIN_SCALE);
+        this.drawDunes(this.fmDunes, this.shaderDunesPls, 0, SKIRT_OFFSET, 0, 0, 0, 0, TERRAIN_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
+        this.drawDunes(this.fmDunes, this.shaderDunesPls, 0, -SKIRT_OFFSET, 0, 0, 0, 0, TERRAIN_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
+        this.gl.cullFace(this.gl.BACK);
+        this.drawDunes(this.fmDunes, this.shaderDunesPls, SKIRT_OFFSET, SKIRT_OFFSET, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
+        this.drawDunes(this.fmDunes, this.shaderDunesPls, -SKIRT_OFFSET, -SKIRT_OFFSET, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
+        this.drawDunes(this.fmDunes, this.shaderDunesPls, SKIRT_OFFSET, -SKIRT_OFFSET, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
+        this.drawDunes(this.fmDunes, this.shaderDunesPls, -SKIRT_OFFSET, SKIRT_OFFSET, 0, 0, 0, 0, -TERRAIN_SCALE * SKIRT_SCALE, -TERRAIN_SCALE * SKIRT_SCALE, TERRAIN_SCALE);
+        this.drawBirds();
+        this.drawPalmTrees();
+        this.shaderDiffuse.use();
+        this.setTexture2D(0, this.skyTexture, this.shaderDiffuse.sTexture);
+        this.shaderDiffuse.drawModel(this, this.fmSky, 0, 0, -1200, 0, 0, 0, 150, 150, 150);
+        this.drawSoftSpriteParticlesPls();
+        this.pls.endPixelLocalStorageWEBGL([this.pls.STORE_OP_STORE_WEBGL]);
         this.drawSun();
     }
     drawPalmTrees() {
@@ -3551,20 +3809,20 @@ class DunesRenderer extends BaseRenderer {
         const y = Math.cos(angle) * this.BIRD_FLIGHT_RADIUS + centerY;
         return { x, y };
     }
-    drawDunes(model, tx, ty, tz, rx, ry, rz, sx, sy, sz) {
-        if (this.shaderDunes === undefined || this.shaderDunes.rm_Vertex === undefined || this.shaderDunes.rm_TexCoord0 === undefined || this.shaderDunes.view_proj_matrix === undefined || this.shaderDunes.rm_Normal === undefined) {
+    drawDunes(model, shader, tx, ty, tz, rx, ry, rz, sx, sy, sz) {
+        if (shader.rm_Vertex === undefined || shader.rm_TexCoord0 === undefined || shader.view_proj_matrix === undefined || shader.rm_Normal === undefined) {
             return;
         }
         const gl = this.gl;
         model.bindBuffers(gl);
-        gl.enableVertexAttribArray(this.shaderDunes.rm_Vertex);
-        gl.enableVertexAttribArray(this.shaderDunes.rm_TexCoord0);
-        gl.enableVertexAttribArray(this.shaderDunes.rm_Normal);
-        gl.vertexAttribPointer(this.shaderDunes.rm_Vertex, 3, gl.FLOAT, false, 32, 0);
-        gl.vertexAttribPointer(this.shaderDunes.rm_TexCoord0, 2, gl.FLOAT, false, 32, 12);
-        gl.vertexAttribPointer(this.shaderDunes.rm_Normal, 3, gl.FLOAT, false, 32, 20);
+        gl.enableVertexAttribArray(shader.rm_Vertex);
+        gl.enableVertexAttribArray(shader.rm_TexCoord0);
+        gl.enableVertexAttribArray(shader.rm_Normal);
+        gl.vertexAttribPointer(shader.rm_Vertex, 3, gl.FLOAT, false, 32, 0);
+        gl.vertexAttribPointer(shader.rm_TexCoord0, 2, gl.FLOAT, false, 32, 12);
+        gl.vertexAttribPointer(shader.rm_Normal, 3, gl.FLOAT, false, 32, 20);
         this.calculateMVPMatrix(tx, ty, tz, rx, ry, rz, sx, sy, sz);
-        gl.uniformMatrix4fv(this.shaderDunes.view_proj_matrix, false, this.getMVPMatrix());
+        gl.uniformMatrix4fv(shader.view_proj_matrix, false, this.getMVPMatrix());
         gl.drawElements(gl.TRIANGLES, model.getNumIndices() * 3, gl.UNSIGNED_SHORT, 0);
         this.checkGlError("DiffuseShader glDrawElements");
     }
@@ -3671,6 +3929,35 @@ class DunesRenderer extends BaseRenderer {
         this.gl.disable(this.gl.BLEND);
         this.gl.depthMask(true);
     }
+    drawSoftSpriteParticlesPls() {
+        if (this.shaderSoftDiffuseColoredPls === undefined) {
+            return;
+        }
+        this.gl.enable(this.gl.BLEND);
+        this.gl.blendFunc(this.gl.ONE, this.gl.ONE);
+        this.gl.depthMask(false);
+        // const cosa = Math.cos(this.timerDustRotation * Math.PI * 2);
+        // const sina = Math.sin(this.timerDustRotation * Math.PI * 2);
+        this.shaderSoftDiffuseColoredPls.use();
+        this.initDepthReadShader(this.shaderSoftDiffuseColoredPls);
+        this.setTexture2D(0, this.textureDustCloud, this.shaderSoftDiffuseColoredPls.sTexture);
+        for (const dune of particlesCoordinates) {
+            for (let i = 0; i < dune.length; i++) {
+                const timer = (this.timerDustMovement + i * 13.37) % 1.0;
+                const coordinates = dune[i];
+                const rotation = i * 35 + this.timerDustRotation * (i % 2 === 0 ? 360 : -360); // TODO check units
+                const x = coordinates[0] * TERRAIN_SCALE + timer * this.DUST_TRAVEL_X;
+                const y = coordinates[1] * TERRAIN_SCALE;
+                const z = coordinates[2] * TERRAIN_SCALE + timer * this.DUST_TRAVEL_Z;
+                const scale = timer * this.DUST_MAX_SCALE;
+                const opacity = this.smootherstep(0.01, 0.1, timer) * (1 - this.smootherstep(0.7, 0.99, timer));
+                this.gl.uniform4f(this.shaderSoftDiffuseColoredPls.color, this.PRESET.DUST_COLOR.r * opacity, this.PRESET.DUST_COLOR.g * opacity, this.PRESET.DUST_COLOR.b * opacity, 1);
+                this.drawDiffuseVBOFacingCamera(this.shaderSoftDiffuseColoredPls, this.fmSmoke, x, y, z, scale, 1, 1, rotation);
+            }
+        }
+        this.gl.disable(this.gl.BLEND);
+        this.gl.depthMask(true);
+    }
     initOffscreen() {
         if (this.canvas === undefined) {
             return;
@@ -3687,6 +3974,26 @@ class DunesRenderer extends BaseRenderer {
         this.fboOffscreen.createGLData(this.canvas.width, this.canvas.height);
         this.checkGlError("offscreen FBO");
         console.log("Initialized offscreen FBO.");
+    }
+    initPls() {
+        if (this.canvas === undefined) {
+            return;
+        }
+        const gl = this.gl;
+        this.pls = gl.getExtension("WEBGL_shader_pixel_local_storage");
+        console.log("pls", this.pls);
+        const blitFBO = gl.createFramebuffer();
+        const renderFBO = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, renderFBO);
+        this.pls.framebufferPixelLocalClearValuefvWEBGL(0, [0, 0, 0, 1]);
+        const tex = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, tex);
+        // gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, this.canvas.width, this.canvas.height);
+        gl.texStorage2D(gl.TEXTURE_2D, 1, gl.R32F, this.canvas.width, this.canvas.height);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, blitFBO);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, renderFBO);
+        this.pls.framebufferTexturePixelLocalStorageWEBGL(0, tex, 0, 0);
     }
     initVignette() {
         ortho(this.matOrtho, -1, 1, -1, 1, 2.0, 250);
@@ -3848,6 +4155,7 @@ class FpsCamera {
         }
     }
 }
+//# sourceMappingURL=FpsCamera.js.map
 
 var MovementMode;
 (function (MovementMode) {

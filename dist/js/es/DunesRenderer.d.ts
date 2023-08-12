@@ -1,5 +1,6 @@
 import { BaseRenderer, FullModel, DiffuseShader } from "webgl-framework";
 import { mat4 } from "gl-matrix";
+import { DunesShader } from "./shaders/DunesShader";
 export declare class DunesRenderer extends BaseRenderer {
     private lastTime;
     private angleYaw;
@@ -23,7 +24,10 @@ export declare class DunesRenderer extends BaseRenderer {
     private shaderDiffuse;
     private shaderDunesPermutations;
     private get shaderDunes();
+    private shaderDunesPlsPermutations;
+    private get shaderDunesPls();
     private shaderSoftDiffuseColored;
+    private shaderSoftDiffuseColoredPls;
     private sunShader;
     private palmShader;
     private shaderAnimated;
@@ -31,6 +35,7 @@ export declare class DunesRenderer extends BaseRenderer {
     private textureOffscreenColor;
     private textureOffscreenDepth;
     private fboOffscreen;
+    private pls;
     private customCamera;
     private Z_NEAR;
     private Z_FAR;
@@ -91,10 +96,11 @@ export declare class DunesRenderer extends BaseRenderer {
     drawVignette(shader: DiffuseShader): void;
     private drawDepthObjects;
     private drawSceneObjects;
+    private drawSceneObjectsPls;
     drawPalmTrees(): void;
     drawBirds(): void;
     private getBirdPosition;
-    drawDunes(model: FullModel, tx: number, ty: number, tz: number, rx: number, ry: number, rz: number, sx: number, sy: number, sz: number): void;
+    drawDunes(model: FullModel, shader: DunesShader, tx: number, ty: number, tz: number, rx: number, ry: number, rz: number, sx: number, sy: number, sz: number): void;
     drawDunesDepth(model: FullModel, tx: number, ty: number, tz: number, rx: number, ry: number, rz: number, sx: number, sy: number, sz: number): void;
     private drawDiffuseVBOFacingCamera;
     private calculateMVPMatrixForSprite;
@@ -104,7 +110,9 @@ export declare class DunesRenderer extends BaseRenderer {
     private smoothstep;
     private smootherstep;
     private drawSoftSpriteParticles;
+    private drawSoftSpriteParticlesPls;
     protected initOffscreen(): void;
+    private initPls;
     private initVignette;
     private initDepthReadShader;
     private randomizeCamera;
